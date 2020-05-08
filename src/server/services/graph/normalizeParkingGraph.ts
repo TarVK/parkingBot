@@ -2,7 +2,6 @@ import {
     INormalizedParkingGraph,
     IParkingGraph,
 } from "../../../_types/graph/IParkingGraph";
-import {includesAny} from "../includesAny";
 
 /**
  * Creates a normalized parking graph
@@ -18,23 +17,9 @@ export function normalizeParkingGraph(
         const node = parkingGraph[key];
         graph[key] = {
             ...node,
-            tags: [...(node.tags || ["carPath", "pedestrianPath", "botPath"])],
+            tags: node.tags || [],
             edges: (node.edges || []).map(edge => ({...edge})),
         };
-    });
-
-    // Make sure tags are accompanied by the right other tags
-    Object.values(graph).forEach(node => {
-        if (
-            includesAny(node.tags, ["spot", "entrance", "exit"]) &&
-            !node.tags?.includes("carPath")
-        )
-            node.tags?.push("carPath");
-        if (
-            includesAny(node.tags, ["spot", "pedestrianEntrance", "pedestrianExit"]) &&
-            !node.tags?.includes("pedestrianPath")
-        )
-            node.tags?.push("pedestrianPath");
     });
 
     // Generate bidirectional edges for spots
@@ -59,6 +44,7 @@ export function normalizeParkingGraph(
             const dY = endNode.y - node.y;
             if (edge.distance === undefined) edge.distance = Math.sqrt(dX * dX + dY * dY);
             if (edge.angle === undefined) edge.angle = Math.atan2(dY, dX);
+            if (!edge.tags) edge.tags = [];
         });
     });
 

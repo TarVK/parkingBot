@@ -1,9 +1,9 @@
-import {ISearchGraph} from "../../../model/_types/ISearchGraph";
+import {IGraph} from "../../../model/_types/IGraph";
 import {graphSearch} from "./graphSearch";
-import {ISearchEdge} from "../../../model/_types/ISearchEdge";
-import {createPedestrianID} from "./pedestrianNodeSuffix";
+import {IEdge} from "../../../model/_types/IEdge";
 import {IParkingGraph} from "../../../../_types/graph/IParkingGraph";
-import {getOriginalPath} from "./getOriginalPath";
+import {getOriginalPath, createPath} from "./pathUtils";
+import {ISearchGraph, ISearchEdge} from "../transformations/_types/ISearchGraph";
 
 /**
  * Finds the best parking spot
@@ -25,54 +25,29 @@ export function findParkingSpot(
         /** How expensive turning 90 degrees is in relation to driving 1 meter */
         turnWeight: number;
     }
-):
-    | {
-          /** The path towards the spot */
-          spotPath: string[];
-          /** The path from the spot towards the pedestrian exit */
-          exitPath: string[];
-      }
-    | undefined {
+): string[] | undefined {
     // Get the predecessor map
     const {distances, predecessors} = graphSearch(
         searchGraph,
         config.startID,
         (edge: ISearchEdge) => {
-            if (edge.isCarTurn) return edge.weight * config.turnWeight;
-            if (edge.isPedestrianPath) return edge.weight * config.walkWeight;
+            console.log(edge.meta.type);
+            if (edge.meta.type == "turn") return edge.weight * config.turnWeight;
+            if (edge.meta.type == "walk") return edge.weight * config.walkWeight;
             return edge.weight;
         }
     );
-    console.log(predecessors);
 
     // Find the shortest path
     let shortestID: string | undefined;
     config.exitIDs.forEach(ID => {
-        const pedestrianID = createPedestrianID(ID);
+        const pedestrianID = `1-${ID}`;
         if (!shortestID || distances[pedestrianID] < distances[shortestID])
             shortestID = pedestrianID;
     });
     if (!shortestID) return undefined;
 
-    // Create lists to properly store the paths
-    const exitPath = [] as string[];
-    const spotPath = [] as string[];
-
-    let next = shortestID;
-    do {
-        exitPath.unshift(next);
-        next = predecessors[next];
-    } while (next && !parkingGraph[searchGraph[next].original].tags?.includes("spot"));
-    exitPath.unshift(next);
-
-    do {
-        spotPath.unshift(next);
-        next = predecessors[next];
-    } while (next);
-    console.log("Detect");
-
-    return {
-        spotPath: getOriginalPath(spotPath, searchGraph),
-        exitPath: getOriginalPath(exitPath, searchGraph),
-    };
+    // Create the overall path
+    const path = getOriginalPath(createPath(predecessors, shortestID), searchGraph);
+    return path;
 }

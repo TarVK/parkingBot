@@ -22,13 +22,11 @@ export class ApplicationClass extends SocketModel {
      * Retrieves a free parking spot
      * @returns The graph
      */
-    public getParkingSpot(): Promise<
-        {spotPath: string[]; exitPath: string[]} | undefined
-    > {
+    public getParkingSpot(): Promise<string[] | undefined> {
         // return this.socket.emitAsync("getSpot", {walkCost: 0.99, turnCost: 0});
-        // return this.socket.emitAsync("getSpot", {walkCost: 1, turnCost: 0});
+        return this.socket.emitAsync("getSpot", {walkCost: 1, turnCost: 0});
         // return this.socket.emitAsync("getSpot", {walkCost: 1.01, turnCost: 0});
-        return this.socket.emitAsync("getSpot", {walkCost: 1.5, turnCost: 5});
+        // return this.socket.emitAsync("getSpot", {walkCost: 1.5, turnCost: 5});
         // return this.socket.emitAsync("getSpot");
     }
 }

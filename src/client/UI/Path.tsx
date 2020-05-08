@@ -13,7 +13,7 @@ export const Path: FC<{
     return (
         <Fragment>
             {/* Draw all edges */}
-            {path.map(key => {
+            {path.map((key, i) => {
                 const node = parkingGraph[key];
                 if (!node) return;
                 if (!previousNode) {
@@ -26,7 +26,7 @@ export const Path: FC<{
                 previousNode = node;
                 return (
                     <Line
-                        key={`${key}-path`}
+                        key={`${key}-${i}-path`}
                         start={start}
                         end={end}
                         color={color}

@@ -1,5 +1,5 @@
 import {INormalizedParkingNode} from "../../../_types/graph/IParkingNode";
-import {includesAny} from "../includesAny";
+import {includesAny} from "../arrayUtils";
 
 /**
  * Checks whether this is a special node to interface with "The outside world"

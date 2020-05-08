@@ -1,6 +1,6 @@
-import {ISearchGraph} from "../../../model/_types/ISearchGraph";
+import {IGraph} from "../../../model/_types/IGraph";
 import Heap from "../../Heap";
-import {ISearchEdge} from "../../../model/_types/ISearchEdge";
+import {IEdge} from "../../../model/_types/IEdge";
 
 /**
  * Creates a tree connecting all nodes to the start node in the shortest way
@@ -9,10 +9,10 @@ import {ISearchEdge} from "../../../model/_types/ISearchEdge";
  * @param getWeight The callback to get an edge weight
  * @returns A map of the IDs of all predecessor nodes on the shortest path from the start
  */
-export function graphSearch(
-    searchGraph: ISearchGraph,
+export function graphSearch<E>(
+    searchGraph: IGraph<any, E>,
     startID: string,
-    getWeight: (edge: ISearchEdge, startID: string) => number
+    getWeight: (edge: IEdge<E>, startID: string) => number
 ): {
     distances: {
         [ID: string]: number;

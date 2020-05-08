@@ -1,11 +1,12 @@
 import {INormalizedParkingGraph, IParkingGraph} from "../../_types/graph/IParkingGraph";
 import {Bot} from "./Bot";
 import {Car} from "./Car";
-import {ISearchGraph} from "./_types/ISearchGraph";
+import {IGraph} from "./_types/IGraph";
 import {normalizeParkingGraph} from "../services/graph/normalizeParkingGraph";
 import {createSpotSearchGraph} from "../services/graph/search/createSpotSearchGraph";
 import {findPedestrianExits} from "../services/graph/findPedestrianExits";
 import {findParkingSpot} from "../services/graph/search/findParkingSpot";
+import {ISearchGraph} from "../services/graph/transformations/_types/ISearchGraph";
 
 export class ParkingLot {
     protected graph: INormalizedParkingGraph;
@@ -43,16 +44,9 @@ export class ParkingLot {
         entranceID: string = "entrance",
         turnCost: number = 5,
         walkCost: number = 5
-    ):
-        | {
-              /** The path towards the spot */
-              spotPath: string[];
-              /** The path from the spot towards the pedestrian exit */
-              exitPath: string[];
-          }
-        | undefined {
+    ): string[] | undefined {
         return findParkingSpot(this.searchGraph, this.graph, {
-            startID: entranceID,
+            startID: `0-${entranceID}`,
             exitIDs: this.pedestrianExits,
             walkWeight: walkCost,
             turnWeight: turnCost,
