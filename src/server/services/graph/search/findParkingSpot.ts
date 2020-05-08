@@ -26,12 +26,15 @@ export function findParkingSpot(
         turnWeight: number;
     }
 ): string[] | undefined {
+    // Make sure no invalid weights are specified
+    config.turnWeight = Math.max(0, config.turnWeight);
+    config.walkWeight = Math.max(0, config.walkWeight);
+
     // Get the predecessor map
     const {distances, predecessors} = graphSearch(
         searchGraph,
         config.startID,
         (edge: ISearchEdge) => {
-            console.log(edge.meta.type);
             if (edge.meta.type == "turn") return edge.weight * config.turnWeight;
             if (edge.meta.type == "walk") return edge.weight * config.walkWeight;
             return edge.weight;

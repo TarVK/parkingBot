@@ -20,14 +20,19 @@ export class ApplicationClass extends SocketModel {
     /**
      * // TODO: remove this test method
      * Retrieves a free parking spot
-     * @returns The graph
+     * @param walkCost How expensive it is to walk 1 meter compared to driving 1 meter
+     * @param turnCost How expensive it is to turn 90 degrees compared to driving 1 meter
+     * @returns The path
      */
-    public getParkingSpot(): Promise<string[] | undefined> {
+    public getParkingSpot(
+        walkCost: number = 1,
+        turnCost: number = 0
+    ): Promise<string[] | undefined> {
         // return this.socket.emitAsync("getSpot", {walkCost: 0.99, turnCost: 0});
-        return this.socket.emitAsync("getSpot", {walkCost: 1, turnCost: 0});
+        // return this.socket.emitAsync("getSpot", {walkCost: 1, turnCost: 0});
         // return this.socket.emitAsync("getSpot", {walkCost: 1.01, turnCost: 0});
         // return this.socket.emitAsync("getSpot", {walkCost: 1.5, turnCost: 5});
-        // return this.socket.emitAsync("getSpot");
+        return this.socket.emitAsync("getSpot", {walkCost, turnCost});
     }
 }
 
