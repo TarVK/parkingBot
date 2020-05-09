@@ -27,7 +27,7 @@ export class ApplicationClass extends SocketModel {
     public getParkingSpot(
         walkCost: number = 1,
         turnCost: number = 0
-    ): Promise<string[] | undefined> {
+    ): Promise<[string[], string[], string[], string[]] | undefined> {
         // return this.socket.emitAsync("getSpot", {walkCost: 0.99, turnCost: 0});
         // return this.socket.emitAsync("getSpot", {walkCost: 1, turnCost: 0});
         // return this.socket.emitAsync("getSpot", {walkCost: 1.01, turnCost: 0});

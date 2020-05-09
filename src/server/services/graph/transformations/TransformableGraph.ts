@@ -3,6 +3,11 @@ import {IEdge} from "../../../model/_types/IEdge";
 import {IGraph} from "../../../model/_types/IGraph";
 import {ISymmetricEdge} from "./_types/ISymmetricEdge";
 import {IMarkedNode} from "./_types/IMarkedNode";
+import {TransformableSearchGraph, ISearchGraph} from "./_types/ISearchGraph";
+import {
+    IParkingGraph,
+    INormalizedParkingGraph,
+} from "../../../../_types/graph/IParkingGraph";
 
 /**
  * A class used to ease transforming graphs
@@ -176,6 +181,14 @@ export class TransformableGraph<N, E> {
     }
 
     /**
+     * Adds an edge in the opposite direction
+     * @param edge The original edge to add flipped
+     */
+    public addReversedEdge(edge: ISymmetricEdge<E>): void {
+        this.addRenamedEdge(edge, edge.end, edge.start);
+    }
+
+    /**
      * Removes an edge between the start and end node
      * @param startID The ID of the start node
      * @param endID The ID of the end node
@@ -310,5 +323,81 @@ export class TransformableGraph<N, E> {
         });
 
         return graph;
+    }
+
+    /**
+     * Normalizes the given parking graph
+     * @param parkingGraph The parking graph to normalize
+     * @returns The normalized parking graph
+     */
+    public static normalizeParkingGraph(
+        parkingGraph: IParkingGraph
+    ): INormalizedParkingGraph {
+        // Copy the graph, and create edge and tag arrays if needed
+        const graph = {} as IParkingGraph;
+        Object.keys(parkingGraph).forEach(key => {
+            const node = parkingGraph[key];
+            graph[key] = {
+                ...node,
+                tags: node.tags || [],
+                edges: (node.edges || []).map(edge => ({...edge})),
+            };
+        });
+
+        // Generate bidirectional edges for spots
+        Object.keys(graph).forEach(key => {
+            const node = graph[key];
+            node.edges?.forEach(edge => {
+                const endNode = graph[edge.end];
+                if (
+                    endNode.tags?.includes("spot") &&
+                    !endNode.edges?.find(({end}) => end == key)
+                ) {
+                    endNode.edges?.push({end: key});
+                }
+            });
+        });
+
+        // Calculate distances and angles of edges
+        Object.values(graph).forEach(node => {
+            node.edges?.forEach(edge => {
+                const endNode = graph[edge.end];
+                const dX = endNode.x - node.x;
+                const dY = endNode.y - node.y;
+                if (edge.distance === undefined)
+                    edge.distance = Math.sqrt(dX * dX + dY * dY);
+                if (edge.angle === undefined) edge.angle = Math.atan2(dY, dX);
+                if (!edge.tags) edge.tags = [];
+            });
+        });
+
+        // Return the updates graph
+        return graph as INormalizedParkingGraph;
+    }
+
+    /**
+     * Creates a transformable graph from a parking graph
+     * @param parkingGraph The parking graph
+     * @returns The search graph
+     */
+    public static fromParkingGraph(
+        parkingGraph: IParkingGraph
+    ): TransformableSearchGraph {
+        const normalizedParkingGraph = this.normalizeParkingGraph(parkingGraph);
+        const searchGraph = {} as ISearchGraph;
+        Object.keys(normalizedParkingGraph).forEach(ID => {
+            const node = normalizedParkingGraph[ID];
+            searchGraph[ID] = {
+                meta: {
+                    original: {ID, ...node},
+                },
+                edges: node.edges.map(edge => ({
+                    end: edge.end,
+                    weight: edge.distance,
+                    meta: {original: {start: ID, ...edge}, type: "original"},
+                })),
+            };
+        });
+        return new TransformableGraph(searchGraph);
     }
 }

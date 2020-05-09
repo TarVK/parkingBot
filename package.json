@@ -4,9 +4,9 @@
     "description": "You know, them cards",
     "private": true,
     "scripts": {
-        "dev-server": "concurrently \"tsc -w\"  \"cpx \\\"src/**/*.{html,png,jpg,json}\\\"  \\\"build\\\" --watch --verbose\" \"nodemon build/server/index.js dev\"",
+        "dev-server": "npm run build-server && concurrently \"tsc -w --incremental\"  \"cpx \\\"src/**/*.{html,png,jpg,json}\\\"  \\\"build\\\" --watch --verbose\" \"nodemon build/server/index.js dev\"",
         "dev-client": "webpack-dev-server --env dev",
-        "build-server": "tsc && cpx \"src/**/*.{html,png,jpg,json}\" \"build\"",
+        "build-server": "tsc --incremental && cpx \"src/**/*.{html,png,jpg,json}\" \"build\"",
         "build-client": "webpack --env prod",
         "start": "set NODE_ENV=production&& node build/server/index.js",
         "dev": "concurrently \"npm run dev-server\" \"npm run dev-client\"",

@@ -233,5 +233,10 @@ export const lot = {
         edges: [{end: "3", tags: ["carPath", "pedestrianPath", "botPath"]}],
     },
     exit: {x: 0, y: 5, tags: ["exit"], edges: []},
-    stairs: {x: 17, y: 6, tags: ["pedestrianEntrance", "pedestrianExit"], edges: []},
+    stairs: {
+        x: 17,
+        y: 6,
+        tags: ["pedestrianEntrance", "pedestrianExit"],
+        edges: [{end: "16", tags: ["pedestrianPath"]}],
+    },
 } as IParkingGraph;
