@@ -17,6 +17,7 @@ export const FilterableGraphFilters: FC<{graph: GraphFilter}> = ({graph}) => {
                 label="Nodes to display"
                 selectedKeys={nodeTags}
                 onChange={(e, v) =>
+                    v &&
                     graph.setNodeVisibleTags(
                         v.selected
                             ? [...nodeTags, v.text as any]
@@ -31,6 +32,7 @@ export const FilterableGraphFilters: FC<{graph: GraphFilter}> = ({graph}) => {
                 label="Edges to display"
                 selectedKeys={edgeTags}
                 onChange={(e, v) =>
+                    v &&
                     graph.setEdgeVisibleTags(
                         v.selected
                             ? [...edgeTags, v.text as any]
