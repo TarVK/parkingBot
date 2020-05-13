@@ -1,68 +1,18 @@
 import {jsx} from "@emotion/core";
-import {FC, useState, useEffect, Fragment} from "react";
-import {Stage} from "react-pixi-fiber";
-import {GraphComp} from "./GraphComp";
-import {Path} from "./Path";
-import {TransformableContainer} from "../components/pixi/TransformableContainer";
-import {Loader, useDataHook, useActionState, LoaderSwitch} from "model-react";
-import {Application} from "../model/Application";
-import {TextField, PrimaryButton} from "@fluentui/react";
-import {createSpotSearchGraph} from "../../server/services/graph/search/createSpotSearchGraph";
+import {FC} from "react";
+import {Route, Router, Switch} from "react-router-dom";
+import {SearchTest} from "./SearchTest";
+import {LotCreatorView} from "./lotCreator/LotCreatorView";
 
-const size = {width: 800, height: 600};
-export const App: FC = () => {
-    const [h, s] = useDataHook();
-    const [addPath, _, paths] = useActionState<string[] | undefined>(h, false);
-    const path = (paths as any) as string[]; // bug:
-    const [walkCost, setWalkCost] = useState(1);
-    const [turnCost, setTurnCost] = useState(0);
-
-    const createPath = () => {
-        console.log(walkCost, turnCost);
-        addPath(Application.getParkingSpot(walkCost, turnCost), true);
-    };
-
-    return (
-        <Loader>
-            {h => {
-                const graph = Application.getParkingGraph(h);
-                if (!graph) return <div>loading</div>;
-
-                return (
-                    <Fragment>
-                        <Stage
-                            options={{
-                                backgroundColor: 0x10bb99,
-                                ...size,
-                                antialias: true,
-                            }}>
-                            <TransformableContainer
-                                height={size.height}
-                                offset={{x: 100, y: 300}}>
-                                <GraphComp parkingGraph={graph} />
-                                <Path path={path || []} parkingGraph={graph} />
-                            </TransformableContainer>
-                        </Stage>
-                        <TextField
-                            label="walk cost"
-                            type="number"
-                            value={walkCost + ""}
-                            onChange={(e, v) => setWalkCost(Number(v))}
-                        />
-                        <TextField
-                            label="turn cost"
-                            type="number"
-                            value={turnCost + ""}
-                            onChange={(e, v) => setTurnCost(Number(v))}
-                        />
-                        <LoaderSwitch {...s} onLoad="loading">
-                            <PrimaryButton onClick={createPath}>
-                                create path
-                            </PrimaryButton>
-                        </LoaderSwitch>
-                    </Fragment>
-                );
-            }}
-        </Loader>
-    );
-};
+export const App: FC = () => (
+    <Router>
+        <Switch>
+            <Route path="/edit">
+                <LotCreatorView />
+            </Route>
+            <Route path="/">
+                <SearchTest />
+            </Route>
+        </Switch>
+    </Router>
+);
