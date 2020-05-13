@@ -4,13 +4,13 @@ import {IParkingNodeTag} from "./IParkingNodeTag";
 export type IParkingNode = Readonly<{
     x: number;
     y: number;
-    edges?: IParkingEdge[];
-    tags?: IParkingNodeTag[];
+    edges?: Readonly<IParkingEdge[]>;
+    tags?: Readonly<IParkingNodeTag[]>;
 }>;
 
 export type INormalizedParkingNode = Readonly<{
     x: number;
     y: number;
-    edges: INormalizedParkingEdge[];
-    tags: IParkingNodeTag[];
+    edges: Readonly<INormalizedParkingEdge[]>;
+    tags: Readonly<IParkingNodeTag[]>;
 }>;

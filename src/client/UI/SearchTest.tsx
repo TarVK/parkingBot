@@ -8,16 +8,18 @@ import {Loader, useDataHook, useActionState, LoaderSwitch} from "model-react";
 import {Application} from "../model/Application";
 import {TextField, PrimaryButton} from "@fluentui/react";
 
+const colors = ["#000099", "#0000BB", "#0000DD", "#0000FF"];
 const size = {width: 800, height: 600};
 export const SearchTest: FC = () => {
     const [h, s] = useDataHook();
-    const [addPath, _, paths] = useActionState<string[] | undefined>(h, false);
-    const path = (paths as any) as string[]; // bug:
+    const [addPath, _, pathse] = useActionState<
+        [string[], string[], string[], string[]] | undefined
+    >(h, false);
+    const paths = (pathse as any) as undefined | string[][]; // bug: https://github.com/TarVK/model-react/issues/7
     const [walkCost, setWalkCost] = useState(1);
     const [turnCost, setTurnCost] = useState(0);
 
     const createPath = () => {
-        console.log(walkCost, turnCost);
         addPath(Application.getParkingSpot(walkCost, turnCost), true);
     };
 
@@ -39,7 +41,15 @@ export const SearchTest: FC = () => {
                                 height={size.height}
                                 offset={{x: 100, y: 300}}>
                                 <GraphComp parkingGraph={graph} />
-                                <Path path={path || []} parkingGraph={graph} />
+                                {paths &&
+                                    paths.map((path, i) => (
+                                        <Path
+                                            key={i}
+                                            path={path || []}
+                                            parkingGraph={graph}
+                                            color={colors[i]}
+                                        />
+                                    ))}
                             </TransformableContainer>
                         </Stage>
                         <TextField

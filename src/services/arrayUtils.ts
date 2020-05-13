@@ -3,7 +3,7 @@
  * @param haystack The haystack
  * @param needles The needles
  */
-export function includesAny<T>(haystack: T[] | undefined, needles: T[]) {
+export function includesAny<T>(haystack: T[] | Readonly<T[]> | undefined, needles: T[]) {
     return needles.reduce(
         (found, needle) => found || haystack?.includes(needle) || false,
         false
@@ -15,7 +15,7 @@ export function includesAny<T>(haystack: T[] | undefined, needles: T[]) {
  * @param haystack The haystack
  * @param needles The needles
  */
-export function includesAll<T>(haystack: T[] | undefined, needles: T[]) {
+export function includesAll<T>(haystack: T[] | Readonly<T[]> | undefined, needles: T[]) {
     return needles.reduce(
         (foundAll, needle) => foundAll && (haystack?.includes(needle) ?? false),
         true

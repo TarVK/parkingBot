@@ -1,17 +1,12 @@
 import {INormalizedParkingGraph, IParkingGraph} from "../../_types/graph/IParkingGraph";
 import {Bot} from "./Bot";
 import {Car} from "./Car";
-import {IGraph} from "./_types/IGraph";
-import {normalizeParkingGraph} from "../services/graph/normalizeParkingGraph";
-import {createSpotSearchGraph} from "../services/graph/search/createSpotSearchGraph";
-import {findPedestrianExits} from "../services/graph/findPedestrianExits";
-import {findParkingSpot} from "../services/graph/search/findParkingSpot";
-import {ISearchGraph} from "../services/graph/transformations/_types/ISearchGraph";
+import {TransformableGraph} from "../services/graph/transformations/TransformableGraph";
+import {ParkingSearchGraph} from "../services/graph/search/ParkingSearchGraph";
 
 export class ParkingLot {
     protected graph: INormalizedParkingGraph;
-    protected searchGraph: ISearchGraph;
-    protected pedestrianExits: string[];
+    protected searchGraph: ParkingSearchGraph;
     protected bots: Bot[] = [];
 
     /**
@@ -19,9 +14,8 @@ export class ParkingLot {
      * @param lot The setup of the lot
      */
     public constructor(lot: IParkingGraph) {
-        this.graph = normalizeParkingGraph(lot);
-        this.searchGraph = createSpotSearchGraph(this.graph);
-        this.pedestrianExits = findPedestrianExits(this.graph);
+        this.graph = TransformableGraph.normalizeParkingGraph(lot);
+        this.searchGraph = new ParkingSearchGraph(this.graph);
     }
 
     // Lot management
@@ -44,10 +38,9 @@ export class ParkingLot {
         entranceID: string = "entrance",
         turnCost: number = 5,
         walkCost: number = 5
-    ): string[] | undefined {
-        return findParkingSpot(this.searchGraph, this.graph, {
-            startID: `0-${entranceID}`,
-            exitIDs: this.pedestrianExits,
+    ): [string[], string[], string[], string[]] | undefined {
+        return this.searchGraph.findParkingSpot({
+            startID: entranceID,
             walkWeight: walkCost,
             turnWeight: turnCost,
         });

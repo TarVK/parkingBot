@@ -1,14 +1,14 @@
 import {jsx} from "@emotion/core";
 import {FC} from "react";
-import {Route, Router, Switch} from "react-router-dom";
+import {Route, BrowserRouter as Router, Switch} from "react-router-dom";
 import {SearchTest} from "./SearchTest";
-import {LotCreatorView} from "./lotCreator/LotCreatorView";
+import {LotEditorView} from "./lotEditor/LotEditorView";
 
 export const App: FC = () => (
     <Router>
         <Switch>
             <Route path="/edit">
-                <LotCreatorView />
+                <LotEditorView />
             </Route>
             <Route path="/">
                 <SearchTest />

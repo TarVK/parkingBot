@@ -5,7 +5,7 @@ export type IParkingEdge = Readonly<{
     end: string;
     distance?: number;
     angle?: number;
-    tags?: IParkingEdgeTag[];
+    tags?: Readonly<IParkingEdgeTag[]>;
 }>;
 
 export type INormalizedParkingEdge = TNormalized<IParkingEdge>;
