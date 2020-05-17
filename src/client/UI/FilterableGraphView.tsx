@@ -4,6 +4,7 @@ import {Line} from "../components/pixi/Line";
 import {Circle} from "../components/pixi/Circle";
 import {GraphFilter} from "../model/GraphFilter";
 import {useDataHook} from "model-react";
+import {IGraphClickHandler} from "./_types/IGraphClickHandler";
 
 const colors = {
     spot: "#ff00ff",
@@ -12,7 +13,9 @@ const colors = {
     pedestrianEntrance: "#009900",
     pedestrianExit: "#990000",
 };
-export const FilterableGraphView: FC<{graph: GraphFilter}> = ({graph}) => {
+export const FilterableGraphView: FC<{
+    graph: GraphFilter;
+}> = ({graph}) => {
     const [h] = useDataHook();
     const nodes = graph.getVisibleNodes(h);
     const edges = graph.getVisibleEdges(h);
@@ -30,9 +33,16 @@ export const FilterableGraphView: FC<{graph: GraphFilter}> = ({graph}) => {
 
             {/* draw all nodes */}
             {nodes.map(node => {
-                const color = colors[node.tags[0]];
+                const color = colors[node.tags[0]] || "#000000";
                 if (color)
-                    return <Circle key={node.ID} pos={node} radius={10} color={color} />;
+                    return (
+                        <Circle
+                            key={node.ID}
+                            pos={node}
+                            radius={node.tags.length == 0 ? 5 : 10}
+                            color={color}
+                        />
+                    );
             })}
         </Fragment>
     );

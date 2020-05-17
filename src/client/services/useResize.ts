@@ -11,5 +11,5 @@ export const useResize = (): [number, number] => {
         return () => window.removeEventListener("resize", listener);
     });
 
-    return [window.innerWidth, window.innerWidth];
+    return [window.innerWidth, window.innerHeight];
 };

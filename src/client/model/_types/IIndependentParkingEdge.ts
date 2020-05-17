@@ -13,3 +13,9 @@ export type IIndependentParkingEdge = Readonly<{
     };
     tags: Readonly<IParkingEdgeTag[]>;
 }>;
+
+export type IPartialIndependentParkingEdge = Readonly<{
+    start: string;
+    end: string;
+    tags: Readonly<IParkingEdgeTag[]>;
+}>;

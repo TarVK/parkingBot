@@ -4,3 +4,11 @@ export type IParkingNodeTag =
     | "exit" /** The car exit of the parking lot */
     | "pedestrianEntrance" /** The pedestrian entrance to the parking lot */
     | "pedestrianExit" /** The pedestrian exit to the parking lot */;
+
+export const parkingNodeTags = [
+    "spot",
+    "entrance",
+    "exit",
+    "pedestrianEntrance",
+    "pedestrianExit",
+] as const;

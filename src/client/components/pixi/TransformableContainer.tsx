@@ -1,6 +1,5 @@
 import {jsx} from "@emotion/core";
-import {CustomPIXIComponent} from "react-pixi-fiber";
-import {utils, Graphics, Container} from "pixi.js";
+import {Container, Rectangle} from "pixi.js";
 import {createContext, ReactNode} from "react";
 import {createPixiComponent} from "./createPixiComponent";
 
@@ -18,6 +17,12 @@ export const TransformableContainer = createPixiComponent<
     {
         create: ({height}) => {
             const container = new Container();
+
+            container.interactive = true;
+            container.buttonMode = true;
+            container.hitArea = new Rectangle(-5000, -5000, 10000, 10000);
+            container.cursor = "default";
+
             container.scale.y = -1;
             container.position.y = height;
             return container;
