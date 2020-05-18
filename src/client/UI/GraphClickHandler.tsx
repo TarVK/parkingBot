@@ -88,7 +88,7 @@ export const GraphClickHandler: FC<{
             })),
             ...visibleNodes.map(node => ({
                 item: node,
-                distance: getNodeDistance(pos, node),
+                distance: getNodeDistance(pos, node) - 5 / unitScale, // Make nodes have an actual size that counts as spot on
             })),
         ];
 

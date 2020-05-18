@@ -16,6 +16,8 @@ import {EdgeTool} from "../../model/lotEditor/EdgeTool";
 import {NodeTool} from "../../model/lotEditor/NodeTool";
 import {Circle} from "../../components/pixi/Circle";
 import {Line} from "../../components/pixi/Line";
+import {PrimaryButton, DefaultButton} from "@fluentui/react";
+import {LotIO} from "./LotIO";
 
 /**
  * Handles clicking on the graph
@@ -95,6 +97,48 @@ function onGraphClick(
     }
 }
 
+/**
+ * Handles keyboard and scroll input interactions
+ * @param lot The lot to alter based on interactions
+ */
+const useLotInputHooks = (lot: null | LotEditor) => {
+    // Scroll handler for tool cycling
+    useEffect(() => {
+        const scrollListener = e => {
+            if (e.ctrlKey) return;
+            if (lot) {
+                console.log(e);
+                const tools = ["selector", "edgeCreator", "nodeCreator"] as const;
+                const index = tools.indexOf(lot.getSelectedToolName(null));
+                lot.selectTool(tools[(3 + index + (e.deltaY > 0 ? -1 : 1)) % 3]);
+            }
+        };
+        window.addEventListener("mousewheel", scrollListener, {passive: false});
+        return () => window.removeEventListener("mousewheel", scrollListener);
+    }, [lot]);
+
+    // Delete handler
+    useEffect(() => {
+        const keyHandler = e => {
+            if (lot && e.path[0].tagName.toLowerCase() != "input" && e.keyCode == 46) {
+                lot.getSelectorTool().getEdgeSelector().deleteEdge();
+                lot.getSelectorTool().getNodeSelector().deleteNode();
+            }
+        };
+        window.addEventListener("keyup", keyHandler);
+        return () => window.removeEventListener("keyup", keyHandler);
+    }, [lot]);
+};
+
+/*
+ * TODO:
+ * - Add export button and window
+ * - Add help window
+ * - Allow selected nodes to be dragged
+ * - Select nearby edge or node when a node/edge is deleted
+ * - Maybe add node and edge overview list
+ */
+
 export const LotEditorView: FC = () => {
     const mouseDown = useRef<any>();
     const theme = useTheme();
@@ -105,6 +149,7 @@ export const LotEditorView: FC = () => {
         );
     }, []);
     const [h] = useDataHook();
+    useLotInputHooks(lot);
 
     if (!lot) return <div>loading</div>;
 
@@ -113,7 +158,7 @@ export const LotEditorView: FC = () => {
 
     return (
         <StageContainer
-            moveable={selectMode}
+            moveable
             stageContent={
                 <GraphClickHandler
                     onMouseDown={(pos, items) => (mouseDown.current = {pos, items})}
@@ -141,16 +186,15 @@ export const LotEditorView: FC = () => {
                 <Fragment>
                     <div
                         css={{
-                            marginBottom: theme.spacing.m,
                             background: theme.palette.themeLighter,
                             padding: theme.spacing.m,
                         }}>
                         <FilterableGraphFilters graph={lot} />
                     </div>
-                    <div
-                        css={{
-                            padding: theme.spacing.m,
-                        }}>
+                    <div css={{padding: theme.spacing.m}}>
+                        <LotIO editor={lot} />
+                    </div>
+                    <div css={{padding: theme.spacing.m}}>
                         <ToolsView editor={lot} />
                     </div>
                 </Fragment>

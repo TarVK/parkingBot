@@ -32,7 +32,7 @@ export class LotEditor extends GraphFilter {
      * Updates the graph
      * @param graph The new graph
      */
-    protected setGraph(graph: IParkingGraph): void {
+    public setGraph(graph: IParkingGraph): void {
         this.graph.set(graph);
     }
 

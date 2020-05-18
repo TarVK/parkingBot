@@ -24,9 +24,11 @@ export const InteractiveContainer = createPixiComponent<
         props: (instance, {onMouseDown, onMouseUp}) => {
             instance.removeAllListeners();
             instance.on("mousedown", e => {
+                if (e.data.button != 0) return;
                 onMouseDown(e.data.getLocalPosition(instance));
             });
             instance.on("mouseup", e => {
+                if (e.data.button != 0) return;
                 onMouseUp(e.data.getLocalPosition(instance));
             });
         },

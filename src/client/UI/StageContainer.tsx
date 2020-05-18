@@ -14,15 +14,18 @@ export const StageContainer: FC<{
     const [windowWidth, windowHeight] = useResize();
     const sidebarWidth = 300;
 
+    const stageWidth = windowWidth - sidebarWidth;
+
     return (
         <div css={{display: "flex", flexDirection: "row", height: "100vh"}}>
             <div css={{flex: 1}} onMouseDown={e => e.preventDefault()}>
-                <Stage height={windowHeight} width={windowWidth - sidebarWidth}>
+                <Stage height={windowHeight} width={stageWidth}>
                     <MovableContainer
                         disabled={!moveable}
+                        width={stageWidth}
                         height={windowHeight}
                         initScale={20}
-                        initOffset={{x: 100, y: 300}}>
+                        initOffset={{x: stageWidth / 2, y: windowHeight / 2}}>
                         {stageContent}
                     </MovableContainer>
                 </Stage>
