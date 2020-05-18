@@ -12,6 +12,12 @@ app.get("/ping", (req, resp) => {
     resp.json({type: "pong", timestamp: Date.now()});
 });
 
+// Redirect anything else to the index
+app.use((req, resp) => {
+    req.url = "/";
+});
+app.use(express.static(Path.join(process.cwd(), "public")));
+
 if (domain.resources.port == domain.socket.port) {
     const server = http.createServer(app);
     startApplication(server);
