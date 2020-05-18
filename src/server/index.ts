@@ -13,8 +13,9 @@ app.get("/ping", (req, resp) => {
 });
 
 // Redirect anything else to the index
-app.use((req, resp) => {
+app.use((req, resp, next) => {
     req.url = "/";
+    next();
 });
 app.use(express.static(Path.join(process.cwd(), "public")));
 
