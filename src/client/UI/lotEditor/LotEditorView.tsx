@@ -16,7 +16,6 @@ import {EdgeTool} from "../../model/lotEditor/EdgeTool";
 import {NodeTool} from "../../model/lotEditor/NodeTool";
 import {Circle} from "../../components/pixi/Circle";
 import {Line} from "../../components/pixi/Line";
-import {PrimaryButton, DefaultButton} from "@fluentui/react";
 import {LotIO} from "./LotIO";
 
 /**
@@ -29,13 +28,17 @@ function onGraphClick(
     down: {
         pos: {x: number; y: number};
         items: (IIndependentParkingEdge | IIndependentParkingNode)[];
+        button: number;
     },
     up: {
         pos: {x: number; y: number};
         items: (IIndependentParkingEdge | IIndependentParkingNode)[];
+        button: number;
     },
     editor: LotEditor
 ) {
+    if (up.button != 0) return;
+
     const tool = editor.getSelectedTool(null);
     if (tool instanceof SelectorTool) {
         // Cycle through the items within range when clicked
@@ -67,6 +70,7 @@ function onGraphClick(
         // Get the closest start and end node
         const startNode = startNodes[0];
         const endNode = endNodes[0];
+        if (startNode.ID == endNode.ID) return;
 
         // Create the forward edge
         editor.addEdge({
@@ -161,9 +165,11 @@ export const LotEditorView: FC = () => {
             moveable
             stageContent={
                 <GraphClickHandler
-                    onMouseDown={(pos, items) => (mouseDown.current = {pos, items})}
-                    onMouseUp={(pos, items) =>
-                        onGraphClick(mouseDown.current, {pos, items}, lot)
+                    onMouseDown={(pos, items, button) =>
+                        (mouseDown.current = {pos, items, button})
+                    }
+                    onMouseUp={(pos, items, button) =>
+                        onGraphClick(mouseDown.current, {pos, items, button}, lot)
                     }
                     graph={lot}
                     selectionRangePixels={10}>

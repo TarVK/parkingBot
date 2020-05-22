@@ -1,15 +1,16 @@
 import {jsx} from "@emotion/core";
 import {FC, Fragment} from "react";
-import {INormalizedParkingGraph} from "../../_types/graph/IParkingGraph";
+import {IParkingGraph} from "../../_types/graph/IParkingGraph";
 import {Line} from "../components/pixi/Line";
-import {INormalizedParkingNode} from "../../_types/graph/IParkingNode";
+import {IParkingNode} from "../../_types/graph/IParkingNode";
 
 export const Path: FC<{
-    parkingGraph: INormalizedParkingGraph;
+    parkingGraph: IParkingGraph;
     path: string[];
+    width?: number;
     color?: string;
-}> = ({parkingGraph, path, color = "#0000ff"}) => {
-    let previousNode = undefined as undefined | INormalizedParkingNode;
+}> = ({parkingGraph, path, width = 3, color = "#0000ff"}) => {
+    let previousNode = undefined as undefined | IParkingNode;
     return (
         <Fragment>
             {/* Draw all edges */}
@@ -30,7 +31,8 @@ export const Path: FC<{
                         start={start}
                         end={end}
                         color={color}
-                        arrowSize={10}
+                        arrowSize={2 + width * 2}
+                        width={width}
                     />
                 );
             })}

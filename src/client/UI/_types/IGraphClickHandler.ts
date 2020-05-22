@@ -6,5 +6,6 @@ import {IIndependentParkingNode} from "../../model/_types/IIndependentParkingNod
  */
 export type IGraphClickHandler = (
     pos: {x: number; y: number},
-    items: (IIndependentParkingEdge | IIndependentParkingNode)[]
+    items: (IIndependentParkingEdge | IIndependentParkingNode)[],
+    button: number
 ) => void;

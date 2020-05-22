@@ -1,8 +1,9 @@
 import {Server as HTTPServer} from "http";
 import {AsyncSocketConnection} from "./AsyncSocketConnection";
 import {ParkingLot} from "./model/ParkingLot";
-import {lot} from "./parkingLots/lot1";
+import {lot} from "./parkingLots/lot2";
 import {Bot} from "./model/Bot";
+import {Car} from "./model/Car";
 
 const parkingLot = new ParkingLot(lot);
 
@@ -17,10 +18,27 @@ export function broadcast(message: any, ...args: string[]) {
  * @param socket The socket to setup the api listeners for
  */
 function setupAPI(socket: AsyncSocketConnection) {
+    // Setup interaction
     socket.on("addBot", () => {
         parkingLot.addBot(new Bot(socket));
     });
 
+    // Updating state interaction
+    socket.on("claimSpace", (spaceID: string) => {
+        return parkingLot.claimSpace(spaceID);
+    });
+    socket.on("disclaimSpace", (spaceID: string) => {
+        return parkingLot.disclaimSpace(spaceID);
+    });
+    socket.on("takeSpace", (spaceID: string) => {
+        // TODO: Make proper car object with relevant data
+        return parkingLot.takeSpace(spaceID, new Car());
+    });
+    socket.on("releaseSpace", (spaceID: string) => {
+        return parkingLot.releaseSpace(spaceID);
+    });
+
+    // General state interaction
     socket.on("getGraph", () => {
         return parkingLot.getGraph();
     });

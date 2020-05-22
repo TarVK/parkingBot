@@ -41,15 +41,13 @@ export class AsyncSocketConnection {
             // Forward the event
             const resp = listener(...args);
 
-            // If the response is not undefined, return this as through a callback as a response
-            if (resp !== undefined) {
-                const last = args[args.length - 1];
-                if (last instanceof Function) {
-                    if (resp instanceof Promise) {
-                        resp.then(last);
-                    } else {
-                        last(resp);
-                    }
+            // Return this as through a callback as a response
+            const last = args[args.length - 1];
+            if (last instanceof Function) {
+                if (resp instanceof Promise) {
+                    resp.then(last);
+                } else {
+                    last(resp);
                 }
             }
         };

@@ -3,11 +3,13 @@ import {Bot} from "./Bot";
 import {Car} from "./Car";
 import {TransformableGraph} from "../services/graph/transformations/TransformableGraph";
 import {ParkingSearchGraph} from "../services/graph/search/ParkingSearchGraph";
+import {IParkingSpaces} from "./_types/IParkingSpaces";
 
 export class ParkingLot {
     protected graph: INormalizedParkingGraph;
     protected searchGraph: ParkingSearchGraph;
     protected bots: Bot[] = [];
+    protected parkingSpaces: IParkingSpaces = {};
 
     /**
      * Creates a new parking lot with the given graph
@@ -16,6 +18,16 @@ export class ParkingLot {
     public constructor(lot: IParkingGraph) {
         this.graph = TransformableGraph.normalizeParkingGraph(lot);
         this.searchGraph = new ParkingSearchGraph(this.graph);
+        Object.keys(this.graph)
+            .filter(ID => this.graph[ID].tags.includes("spot"))
+            .forEach(ID => {
+                this.parkingSpaces[ID] = {
+                    ID,
+                    isClaimed: false,
+                    isTaken: false,
+                    car: null,
+                };
+            });
     }
 
     // Lot management
@@ -43,15 +55,23 @@ export class ParkingLot {
             startID: entranceID,
             walkWeight: walkCost,
             turnWeight: turnCost,
+            parkingSpaces: this.parkingSpaces,
         });
     }
 
     /**
      * Claims the given space such that other bots can't take it
      * @param ID The ID of the space to claim
+     * @returns Whether the space could be claimed
      */
-    public claimSpace(ID: string): void {
-        // TODO: implement
+    public claimSpace(ID: string): boolean {
+        const spot = this.parkingSpaces[ID];
+        if (spot) {
+            if (spot.isClaimed || spot.isTaken) return false;
+            spot.isClaimed = true;
+            this.updateSpaces();
+        }
+        return true;
     }
 
     /**
@@ -59,7 +79,11 @@ export class ParkingLot {
      * @param ID The ID of the space to disclaim
      */
     public disclaimSpace(ID: string): void {
-        // TODO: implement
+        const spot = this.parkingSpaces[ID];
+        if (spot) {
+            spot.isClaimed = false;
+            this.updateSpaces();
+        }
     }
 
     /**
@@ -68,7 +92,13 @@ export class ParkingLot {
      * @param car The car that took the place
      */
     public takeSpace(ID: string, car: Car): void {
-        // TODO: implement
+        const spot = this.parkingSpaces[ID];
+        if (spot) {
+            spot.isTaken = true;
+            spot.isClaimed = false;
+            spot.car = car;
+            this.updateSpaces();
+        }
     }
 
     /**
@@ -76,7 +106,31 @@ export class ParkingLot {
      * @param ID The ID of the space
      */
     public releaseSpace(ID: string): void {
-        // TODO: implement
+        const spot = this.parkingSpaces[ID];
+        if (spot) {
+            spot.isTaken = false;
+            spot.isClaimed = false;
+            this.updateSpaces();
+        }
+    }
+
+    /**
+     * Updates the data of the spaces
+     */
+    protected updateSpaces(): void {
+        this.broadcast("parkingSpaces", this.getSerializedSpaces());
+    }
+
+    /**
+     * Serializes the current parking spaces
+     * @returns The serialized spaces
+     */
+    protected getSerializedSpaces(): any {
+        const spaces = {};
+        Object.keys(this.parkingSpaces).forEach(ID => {
+            spaces[ID] = {...this.parkingSpaces[ID], car: null};
+        });
+        return spaces;
     }
 
     // Bot management
@@ -85,7 +139,10 @@ export class ParkingLot {
      * @param bot The bot to add
      */
     public addBot(bot: Bot): void {
-        if (!this.bots.includes(bot)) this.bots.push(bot);
+        if (this.bots.includes(bot)) return;
+
+        this.bots.push(bot);
+        bot.emit("parkingSpaces", this.getSerializedSpaces());
     }
 
     /**
@@ -102,7 +159,7 @@ export class ParkingLot {
      * @param message The message to send
      * @param args The arguments to the message
      */
-    public broadcast(message: any, ...args: string[]): void {
+    public broadcast(message: any, ...args: any[]): void {
         this.bots.forEach(conn => conn.emit(message, ...args));
     }
 }

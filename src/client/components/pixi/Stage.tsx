@@ -33,7 +33,6 @@ export const Stage: FC<{height: number; width: number; children: ReactNode}> = (
     const theme = useTheme();
     const [canvas, setCanvas] = useState(null as null | HTMLCanvasElement);
     const [app, setApp] = useState(null as null | Application);
-    const renderer = useRef(null as null | Renderer);
 
     // Create a new app when no app exists yet and the canvas is set
     useEffect(() => {
@@ -65,6 +64,7 @@ export const Stage: FC<{height: number; width: number; children: ReactNode}> = (
     return (
         <canvas
             css={{width: "100%", height: "100%"}}
-            ref={el => el && setCanvas(el)}></canvas>
+            ref={el => el && setCanvas(el)}
+            onContextMenu={e => e.preventDefault()}></canvas>
     );
 };

@@ -1,8 +1,10 @@
-import {ActionState, IDataHook, DataLoader} from "model-react";
+import {IDataHook, DataLoader} from "model-react";
 import {SocketModel} from "./socketUtils/SocketModel";
 import {INormalizedParkingGraph} from "../../_types/graph/IParkingGraph";
+import {Bot} from "./bot/Bot";
 
 export class ApplicationClass extends SocketModel {
+    protected bot = new DataLoader<Bot | undefined>(() => Bot.create(), undefined);
     protected graph = new DataLoader<INormalizedParkingGraph | undefined>(
         () => this.socket.emitAsync("getGraph"),
         undefined
@@ -18,21 +20,46 @@ export class ApplicationClass extends SocketModel {
     }
 
     /**
-     * // TODO: remove this test method
-     * Retrieves a free parking spot
-     * @param walkCost How expensive it is to walk 1 meter compared to driving 1 meter
-     * @param turnCost How expensive it is to turn 90 degrees compared to driving 1 meter
-     * @returns The path
+     * Retrieves the bot that this client represents/simulates
+     * @param hook The hook to subscribe to changes
+     * @returns The bot
      */
-    public getParkingSpot(
-        walkCost: number = 1,
-        turnCost: number = 0
-    ): Promise<[string[], string[], string[], string[]] | undefined> {
-        // return this.socket.emitAsync("getSpot", {walkCost: 0.99, turnCost: 0});
-        // return this.socket.emitAsync("getSpot", {walkCost: 1, turnCost: 0});
-        // return this.socket.emitAsync("getSpot", {walkCost: 1.01, turnCost: 0});
-        // return this.socket.emitAsync("getSpot", {walkCost: 1.5, turnCost: 5});
-        return this.socket.emitAsync("getSpot", {walkCost, turnCost});
+    public getBot(hook: IDataHook): Bot | undefined {
+        return this.bot.get(hook);
+    }
+
+    // Some methods that can be used to manually alter the parking lot and see the effects
+    /**
+     * Claims the specified spot
+     * @param spotID The spot to claim
+     * @returns Whether the spot could be claimed
+     */
+    public async claimSpace(spotID: string): Promise<boolean> {
+        return this.socket.emitAsync("claimSpace", spotID);
+    }
+
+    /**
+     * Disclaims the specified spot
+     * @param spotID The spot to disclaim
+     */
+    public async disclaimSpace(spotID: string): Promise<void> {
+        return this.socket.emitAsync("disclaimSpace", spotID);
+    }
+
+    /**
+     * Takes the specified spot
+     * @param spotID The spot to take
+     */
+    public async takeSpace(spotID: string): Promise<void> {
+        return this.socket.emitAsync("takeSpace", spotID);
+    }
+
+    /**
+     * Releases the specified spot
+     * @param spotID The spot to release
+     */
+    public async releaseSpace(spotID: string): Promise<void> {
+        return this.socket.emitAsync("releaseSpace", spotID);
     }
 }
 

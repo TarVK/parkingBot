@@ -13,6 +13,9 @@ import {TransformableGraph} from "../transformations/TransformableGraph";
 import {AbstractSearchGraph} from "./AbstractSearchGraph";
 import {IDistances} from "../_types/IDistances";
 import {IPredecessors} from "../_types/IPredecessors";
+import {includesAll} from "../../../../services/arrayUtils";
+import {IParkingEdgeTag} from "../../../../_types/graph/IParkingEdgeTag";
+import {IParkingSpaces} from "../../../model/_types/IParkingSpaces";
 
 export class ParkingSearchGraph extends AbstractSearchGraph {
     protected parkingGraph: INormalizedParkingGraph;
@@ -96,12 +99,13 @@ export class ParkingSearchGraph extends AbstractSearchGraph {
         parkingGraph: TransformableSearchGraph
     ): ISearchGraph {
         const searchGraph = new TransformableGraph<ISearchNodeMeta, ISearchEdgeMeta>();
+        const requiredTags = ["carPath", "botPath"] as IParkingEdgeTag[];
 
-        // Create the route to the parking spot
+        // Create the route to the parking spot (graph 1)
         const {
             nodes: robotRoadNodes,
             edges: robotRoadEdges,
-        } = this.getNodesAndEdgesWithAllTags(parkingGraph, ["carPath", "botPath"]);
+        } = this.getNodesAndEdgesWithAllTags(parkingGraph, requiredTags);
         robotRoadNodes
             .filter(node => !node.meta.original.tags.includes("exit"))
             .forEach(node => searchGraph.addRenamedNode(node, `0-${node.ID}`));
@@ -109,16 +113,48 @@ export class ParkingSearchGraph extends AbstractSearchGraph {
             searchGraph.addRenamedEdge(edge, `0-${edge.start}`, `0-${edge.end}`)
         );
 
-        // Create the route from the parking spot
+        // Create the route from the parking spot (graph 2)
+        robotRoadNodes.forEach(node => searchGraph.addRenamedNode(node, `1-${node.ID}`));
+        robotRoadEdges.forEach(edge =>
+            searchGraph.addRenamedEdge(edge, `1-${edge.start}`, `1-${edge.end}`)
+        );
+
+        // Insert dedicated spot nodes that connects the two graphs
         robotRoadNodes
-            .filter(node => !node.meta.original.tags.includes("spot"))
-            .forEach(node => searchGraph.addRenamedNode(node, `1-${node.ID}`));
-        robotRoadEdges.forEach(edge => {
-            const startMeta = parkingGraph.getNodeMeta(edge.start);
-            if (startMeta?.original.tags.includes("spot"))
-                searchGraph.addRenamedEdge(edge, `0-${edge.start}`, `1-${edge.end}`);
-            else searchGraph.addRenamedEdge(edge, `1-${edge.start}`, `1-${edge.end}`);
-        });
+            .filter(node => node.meta.original.tags.includes("spot"))
+            .forEach(node => {
+                searchGraph.addRenamedNode(node, `spot-${node.ID}`);
+                parkingGraph
+                    .getNodeInEdges(node.ID)
+                    .filter(edge => includesAll(edge.meta.original?.tags, requiredTags))
+                    .forEach(edge => {
+                        searchGraph.addRenamedEdge(
+                            edge,
+                            `0-${edge.start}`,
+                            `spot-${edge.end}`
+                        );
+                        searchGraph.addRenamedEdge(
+                            edge,
+                            `1-${edge.start}`,
+                            `spot-${edge.end}`
+                        );
+                    });
+                parkingGraph
+                    .getNodeOutEdges(node.ID)
+                    .filter(edge => includesAll(edge.meta.original?.tags, requiredTags))
+                    .forEach(edge => {
+                        searchGraph.addRenamedEdge(
+                            edge,
+                            `spot-${edge.start}`,
+                            `0-${edge.end}`
+                        );
+                        searchGraph.addRenamedEdge(
+                            edge,
+                            `spot-${edge.start}`,
+                            `1-${edge.end}`
+                        );
+                    });
+            });
 
         // Add all turning edges
         searchGraph
@@ -136,8 +172,19 @@ export class ParkingSearchGraph extends AbstractSearchGraph {
             )
             .forEach(edge => {
                 const node = searchGraph.getNodeMeta(edge.start)?.original;
-                if (node)
-                    searchGraph.addEdge({...edge, meta: {...edge.meta, spotID: node.ID}});
+                if (node) {
+                    const isDestination = !!edge.start.match(/^spot\-/); // Only the spot nodes connecting the two graphs are destinations
+                    searchGraph.addEdge({
+                        ...edge,
+                        meta: {
+                            ...edge.meta,
+                            spot: {
+                                ID: node.ID,
+                                isDestination,
+                            },
+                        },
+                    });
+                }
             });
 
         return searchGraph.export();
@@ -214,6 +261,8 @@ export class ParkingSearchGraph extends AbstractSearchGraph {
         walkWeight: number;
         /** How expensive turning 90 degrees is in relation to driving 1 meter */
         turnWeight: number;
+        /** The parking spots states */
+        parkingSpaces: IParkingSpaces;
     }): [string[], string[], string[], string[]] | undefined {
         // Make sure no invalid weights are specified
         config.turnWeight = Math.max(0, config.turnWeight) / (Math.PI / 2);
@@ -234,9 +283,15 @@ export class ParkingSearchGraph extends AbstractSearchGraph {
             (edge: ISearchEdge) => {
                 let v = edge.weight;
                 if (edge.meta.type == "turn") v *= config.turnWeight;
-                if (edge.meta.spotID) {
-                    const spotID = edge.meta.spotID;
-                    v += exitDistances[spotID] + entranceDistances[spotID];
+                if (edge.meta.spot) {
+                    const spot = edge.meta.spot;
+                    if (spot.isDestination)
+                        v += exitDistances[spot.ID] + entranceDistances[spot.ID];
+                    if (
+                        config.parkingSpaces[spot.ID].isClaimed ||
+                        config.parkingSpaces[spot.ID].isTaken
+                    )
+                        return Infinity;
                 }
                 return v;
             }
@@ -249,19 +304,22 @@ export class ParkingSearchGraph extends AbstractSearchGraph {
             if (!shortestID || distances[transformedID] < distances[shortestID])
                 shortestID = transformedID;
         });
+        console.log(shortestID && distances[shortestID]);
         if (!shortestID || distances[shortestID] == Infinity) return undefined;
 
         // Create the overall car path
-        const carPath = this.getOriginalPath(
+        const [carEntranceSearchPath, carExitSearchPath] = this.splitSearchPath(
             this.createPath(predecessors, shortestID),
+            this.carEntranceExitGraph,
+            node => !!node.edges.find(edge => edge.meta.spot?.isDestination)
+        );
+        const carEntrancePath = this.getOriginalPath(
+            carEntranceSearchPath,
             this.carEntranceExitGraph
         );
-
-        // Split it into the entrance and exit path
-        const [carEntrancePath, carExitPath] = this.splitPath(
-            carPath,
-            this.parkingGraph,
-            "spot"
+        const carExitPath = this.getOriginalPath(
+            carExitSearchPath,
+            this.carEntranceExitGraph
         );
         const spotID = carExitPath[0];
 

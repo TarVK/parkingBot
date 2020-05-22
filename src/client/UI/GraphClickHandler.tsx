@@ -68,7 +68,7 @@ export const GraphClickHandler: FC<{
     graph,
     children,
     selectionRange = 0,
-    selectionRangePixels,
+    selectionRangePixels = 10,
 }) => {
     const unitScale = useContext(unitToPixelRateContext);
     if (selectionRangePixels) selectionRange = selectionRangePixels / unitScale;
@@ -105,11 +105,11 @@ export const GraphClickHandler: FC<{
     };
     return (
         <InteractiveContainer
-            onMouseDown={pos => {
-                onMouseDown(pos, getItems(pos));
+            onMouseDown={(pos, button) => {
+                onMouseDown(pos, getItems(pos), button);
             }}
-            onMouseUp={pos => {
-                onMouseUp(pos, getItems(pos));
+            onMouseUp={(pos, button) => {
+                onMouseUp(pos, getItems(pos), button);
             }}>
             {children}
         </InteractiveContainer>

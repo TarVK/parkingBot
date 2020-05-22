@@ -5,6 +5,7 @@ import {
     ISearchEdgeMeta,
     TransformableSearchGraph,
     ISearchNodeMeta,
+    ISearchNode,
 } from "../transformations/_types/ISearchGraph";
 import {ISymmetricEdge} from "../transformations/_types/ISymmetricEdge";
 import {IParkingEdgeTag} from "../../../../_types/graph/IParkingEdgeTag";
@@ -389,6 +390,34 @@ export abstract class AbstractSearchGraph {
         path.forEach(ID => {
             const node = parkingGraph[ID];
             if (!found && node.tags?.includes(tag)) {
+                found = true;
+                first.push(ID);
+            }
+
+            if (found) second.push(ID);
+            else first.push(ID);
+        });
+        return [first, second];
+    }
+
+    /**
+     * Splits a path into two, based on the tag the node has. Both paths will contain the node that was split on
+     * @param path The path to be split
+     * @param searchGraph The search graph to get the nodes from
+     * @param split THe function to use to determine whether or not to split
+     * @returns The two paths that were created
+     */
+    protected splitSearchPath(
+        path: string[],
+        searchGraph: ISearchGraph,
+        split: (node: ISearchNode) => boolean
+    ): [string[], string[]] {
+        const first = [] as string[];
+        const second = [] as string[];
+        let found = false;
+        path.forEach(ID => {
+            const node = searchGraph[ID];
+            if (!found && split(node)) {
                 found = true;
                 first.push(ID);
             }

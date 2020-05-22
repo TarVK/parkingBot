@@ -1,7 +1,7 @@
 import {Field, ActionState, IDataHook} from "model-react";
 import {getSocket} from "../../AsyncSocketClient";
-import {ISocketResponse} from "../_types/ISocketResponse";
-import {ISerializer} from "../_types/ISerializer";
+import {ISocketResponse} from "./_types/ISocketResponse";
+import {ISerializer} from "./_types/ISerializer";
 
 export class SocketField<T, S extends ISerializer<any, any> = ISerializer<T, T>> {
     protected field: Field<T>;

@@ -9,7 +9,11 @@ export type ISearchNodeMeta = {original: {ID: string} & INormalizedParkingNode};
 export type ISearchEdgeMeta = {
     original?: {start: string} & INormalizedParkingEdge;
     type: "original" | "turn" | "walk";
-    spotID?: string; // Only present if this is a spot turn edge
+    spot?: {
+        // Only present if this is a spot turn edge
+        ID: string;
+        isDestination: boolean; // Whether it's the final spot to park at, or just one to pass through
+    };
 };
 
 export type ISearchGraph = IGraph<ISearchNodeMeta, ISearchEdgeMeta>;
