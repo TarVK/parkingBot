@@ -6,7 +6,7 @@ import {Application} from "../../model/Application";
 
 export const SpotControls: FC<{spotID: string}> = ({spotID}) => {
     const [h] = useDataHook();
-    const bot = Application.getBot(h);
+    const bot = Application.getControllableBot(h);
     const spots = bot?.getParkingSpaces(h);
     const spot = spots?.[spotID];
     if (!spot) return null;

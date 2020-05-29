@@ -1,9 +1,22 @@
 import {IParkingGraph} from "../../_types/graph/IParkingGraph";
 
 export const lot = {
+    "0": {
+        x: -2,
+        y: 3.5,
+        tags: [],
+        edges: [
+            {
+                end: "105",
+                tags: ["botPath"],
+                distance: 1.5,
+                angle: -1.5707963267948966,
+            },
+        ],
+    },
     "1": {
         x: 0,
-        y: 2.5,
+        y: 5.5,
         tags: ["exit"],
         edges: [],
     },
@@ -30,11 +43,17 @@ export const lot = {
                 distance: 2.5,
                 angle: 1.5707963267948966,
             },
+            {
+                end: "101",
+                tags: ["botPath"],
+                distance: 5,
+                angle: 1.5707963267948966,
+            },
         ],
     },
     "3": {
         x: 3,
-        y: 2.5,
+        y: 5.5,
         tags: [],
         edges: [
             {
@@ -60,6 +79,12 @@ export const lot = {
                 tags: ["pedestrianPath"],
                 distance: 14,
                 angle: 0,
+            },
+            {
+                end: "101",
+                tags: ["botPath"],
+                distance: 0.5,
+                angle: -1.5707963267948966,
             },
         ],
     },
@@ -720,7 +745,7 @@ export const lot = {
     },
     "29": {
         x: 17,
-        y: 2.5,
+        y: 5.5,
         tags: [],
         edges: [
             {
@@ -751,7 +776,7 @@ export const lot = {
     },
     "30": {
         x: 31,
-        y: 2.5,
+        y: 5.5,
         tags: [],
         edges: [
             {
@@ -776,7 +801,7 @@ export const lot = {
     },
     "31": {
         x: 31,
-        y: 5,
+        y: 8,
         tags: [],
         edges: [
             {
@@ -801,7 +826,7 @@ export const lot = {
     },
     "32": {
         x: 31,
-        y: 10,
+        y: 13,
         tags: [],
         edges: [
             {
@@ -826,7 +851,7 @@ export const lot = {
     },
     "33": {
         x: 31,
-        y: 7.5,
+        y: 10.5,
         tags: [],
         edges: [
             {
@@ -851,7 +876,7 @@ export const lot = {
     },
     "34": {
         x: 31,
-        y: 12.5,
+        y: 15.5,
         tags: [],
         edges: [
             {
@@ -876,7 +901,7 @@ export const lot = {
     },
     "35": {
         x: 31,
-        y: 15,
+        y: 18,
         tags: [],
         edges: [
             {
@@ -901,7 +926,7 @@ export const lot = {
     },
     "36": {
         x: 31,
-        y: 17.5,
+        y: 20.5,
         tags: [],
         edges: [
             {
@@ -926,7 +951,7 @@ export const lot = {
     },
     "37": {
         x: 31,
-        y: 20,
+        y: 23,
         tags: [],
         edges: [
             {
@@ -951,7 +976,7 @@ export const lot = {
     },
     "38": {
         x: 17,
-        y: 20,
+        y: 23,
         tags: [],
         edges: [
             {
@@ -988,7 +1013,7 @@ export const lot = {
     },
     "39": {
         x: 17,
-        y: 17.5,
+        y: 20.5,
         tags: [],
         edges: [
             {
@@ -1019,7 +1044,7 @@ export const lot = {
     },
     "40": {
         x: 3,
-        y: 20,
+        y: 23,
         tags: [],
         edges: [
             {
@@ -1044,7 +1069,7 @@ export const lot = {
     },
     "41": {
         x: 17,
-        y: 15,
+        y: 18,
         tags: [],
         edges: [
             {
@@ -1075,7 +1100,7 @@ export const lot = {
     },
     "42": {
         x: 17,
-        y: 12.5,
+        y: 15.5,
         tags: [],
         edges: [
             {
@@ -1106,7 +1131,7 @@ export const lot = {
     },
     "43": {
         x: 17,
-        y: 10,
+        y: 13,
         tags: [],
         edges: [
             {
@@ -1137,7 +1162,7 @@ export const lot = {
     },
     "44": {
         x: 17,
-        y: 7.5,
+        y: 10.5,
         tags: [],
         edges: [
             {
@@ -1168,7 +1193,7 @@ export const lot = {
     },
     "45": {
         x: 17,
-        y: 5,
+        y: 8,
         tags: [],
         edges: [
             {
@@ -1199,7 +1224,7 @@ export const lot = {
     },
     "46": {
         x: 3,
-        y: 5,
+        y: 8,
         tags: [],
         edges: [
             {
@@ -1224,7 +1249,7 @@ export const lot = {
     },
     "47": {
         x: 3,
-        y: 7.5,
+        y: 10.5,
         tags: [],
         edges: [
             {
@@ -1249,7 +1274,7 @@ export const lot = {
     },
     "48": {
         x: 3,
-        y: 10,
+        y: 13,
         tags: [],
         edges: [
             {
@@ -1274,7 +1299,7 @@ export const lot = {
     },
     "49": {
         x: 3,
-        y: 12.5,
+        y: 15.5,
         tags: [],
         edges: [
             {
@@ -1299,7 +1324,7 @@ export const lot = {
     },
     "50": {
         x: 3,
-        y: 15,
+        y: 18,
         tags: [],
         edges: [
             {
@@ -1324,7 +1349,7 @@ export const lot = {
     },
     "51": {
         x: 3,
-        y: 17.5,
+        y: 20.5,
         tags: [],
         edges: [
             {
@@ -1566,7 +1591,7 @@ export const lot = {
     },
     "59": {
         x: 12.5,
-        y: 5,
+        y: 8,
         tags: ["spot"],
         edges: [
             {
@@ -1659,7 +1684,7 @@ export const lot = {
     },
     "62": {
         x: 12.5,
-        y: 7.5,
+        y: 10.5,
         tags: ["spot"],
         edges: [
             {
@@ -1690,7 +1715,7 @@ export const lot = {
     },
     "63": {
         x: 12.5,
-        y: 10,
+        y: 13,
         tags: ["spot"],
         edges: [
             {
@@ -1721,7 +1746,7 @@ export const lot = {
     },
     "64": {
         x: 12.5,
-        y: 12.5,
+        y: 15.5,
         tags: ["spot"],
         edges: [
             {
@@ -1752,7 +1777,7 @@ export const lot = {
     },
     "65": {
         x: 12.5,
-        y: 15,
+        y: 18,
         tags: ["spot"],
         edges: [
             {
@@ -1783,7 +1808,7 @@ export const lot = {
     },
     "66": {
         x: 12.5,
-        y: 17.5,
+        y: 20.5,
         tags: ["spot"],
         edges: [
             {
@@ -1808,7 +1833,7 @@ export const lot = {
     },
     "67": {
         x: 7.5,
-        y: 5,
+        y: 8,
         tags: ["spot"],
         edges: [
             {
@@ -1839,7 +1864,7 @@ export const lot = {
     },
     "68": {
         x: 7.5,
-        y: 7.5,
+        y: 10.5,
         tags: ["spot"],
         edges: [
             {
@@ -1870,7 +1895,7 @@ export const lot = {
     },
     "69": {
         x: 7.5,
-        y: 10,
+        y: 13,
         tags: ["spot"],
         edges: [
             {
@@ -1901,7 +1926,7 @@ export const lot = {
     },
     "70": {
         x: 7.5,
-        y: 12.5,
+        y: 15.5,
         tags: ["spot"],
         edges: [
             {
@@ -1932,7 +1957,7 @@ export const lot = {
     },
     "71": {
         x: 7.5,
-        y: 15,
+        y: 18,
         tags: ["spot"],
         edges: [
             {
@@ -1963,7 +1988,7 @@ export const lot = {
     },
     "72": {
         x: 7.5,
-        y: 17.5,
+        y: 20.5,
         tags: ["spot"],
         edges: [
             {
@@ -2174,7 +2199,7 @@ export const lot = {
     },
     "79": {
         x: 21.5,
-        y: 5,
+        y: 8,
         tags: ["spot"],
         edges: [
             {
@@ -2205,7 +2230,7 @@ export const lot = {
     },
     "80": {
         x: 21.5,
-        y: 7.5,
+        y: 10.5,
         tags: ["spot"],
         edges: [
             {
@@ -2236,7 +2261,7 @@ export const lot = {
     },
     "81": {
         x: 21.5,
-        y: 10,
+        y: 13,
         tags: ["spot"],
         edges: [
             {
@@ -2267,7 +2292,7 @@ export const lot = {
     },
     "82": {
         x: 21.5,
-        y: 12.5,
+        y: 15.5,
         tags: ["spot"],
         edges: [
             {
@@ -2298,7 +2323,7 @@ export const lot = {
     },
     "83": {
         x: 21.5,
-        y: 15,
+        y: 18,
         tags: ["spot"],
         edges: [
             {
@@ -2329,7 +2354,7 @@ export const lot = {
     },
     "84": {
         x: 21.5,
-        y: 17.5,
+        y: 20.5,
         tags: ["spot"],
         edges: [
             {
@@ -2478,7 +2503,7 @@ export const lot = {
     },
     "89": {
         x: 26.5,
-        y: 5,
+        y: 8,
         tags: ["spot"],
         edges: [
             {
@@ -2509,7 +2534,7 @@ export const lot = {
     },
     "90": {
         x: 26.5,
-        y: 7.5,
+        y: 10.5,
         tags: ["spot"],
         edges: [
             {
@@ -2540,7 +2565,7 @@ export const lot = {
     },
     "91": {
         x: 26.5,
-        y: 10,
+        y: 13,
         tags: ["spot"],
         edges: [
             {
@@ -2571,7 +2596,7 @@ export const lot = {
     },
     "92": {
         x: 26.5,
-        y: 12.5,
+        y: 15.5,
         tags: ["spot"],
         edges: [
             {
@@ -2602,7 +2627,7 @@ export const lot = {
     },
     "93": {
         x: 26.5,
-        y: 15,
+        y: 18,
         tags: ["spot"],
         edges: [
             {
@@ -2633,7 +2658,7 @@ export const lot = {
     },
     "94": {
         x: 26.5,
-        y: 17.5,
+        y: 20.5,
         tags: ["spot"],
         edges: [
             {
@@ -2658,7 +2683,7 @@ export const lot = {
     },
     "95": {
         x: 3,
-        y: 21.5,
+        y: 24.5,
         tags: [],
         edges: [
             {
@@ -2677,7 +2702,7 @@ export const lot = {
     },
     "96": {
         x: 16,
-        y: 21.5,
+        y: 24.5,
         tags: [],
         edges: [
             {
@@ -2708,7 +2733,7 @@ export const lot = {
     },
     "97": {
         x: 18,
-        y: 21.5,
+        y: 24.5,
         tags: [],
         edges: [
             {
@@ -2739,7 +2764,7 @@ export const lot = {
     },
     "98": {
         x: 31,
-        y: 21.5,
+        y: 24.5,
         tags: [],
         edges: [
             {
@@ -2758,7 +2783,7 @@ export const lot = {
     },
     "99": {
         x: 16,
-        y: 23.5,
+        y: 26.5,
         tags: ["pedestrianExit"],
         edges: [
             {
@@ -2771,7 +2796,7 @@ export const lot = {
     },
     "100": {
         x: 18,
-        y: 23.5,
+        y: 26.5,
         tags: ["pedestrianEntrance"],
         edges: [
             {
@@ -2782,15 +2807,67 @@ export const lot = {
             },
         ],
     },
+    "101": {
+        x: 3,
+        y: 3.5,
+        tags: [],
+        edges: [
+            {
+                end: "0",
+                tags: ["botPath"],
+                distance: 5,
+                angle: 3.141592653589793,
+            },
+        ],
+    },
+    "102": {
+        x: 2,
+        y: 0,
+        tags: ["botQueue"],
+        edges: [
+            {
+                end: "2",
+                tags: ["botPath", "carPath", "pedestrianPath"],
+                distance: 1,
+                angle: 0,
+            },
+        ],
+    },
+    "104": {
+        x: 2,
+        y: 2,
+        tags: [],
+        edges: [
+            {
+                end: "102",
+                tags: ["botPath"],
+                distance: 3.5,
+                angle: -1.5707963267948966,
+            },
+        ],
+    },
+    "105": {
+        x: -2,
+        y: 2,
+        tags: [],
+        edges: [
+            {
+                end: "104",
+                tags: ["botPath"],
+                distance: 4,
+                angle: 0,
+            },
+        ],
+    },
     entrance: {
         x: 0,
         y: 0,
         tags: ["entrance"],
         edges: [
             {
-                end: "2",
-                tags: ["pedestrianPath", "carPath", "botPath"],
-                distance: 3,
+                end: "102",
+                tags: ["botPath", "carPath", "pedestrianPath"],
+                distance: 2,
                 angle: 0,
             },
         ],

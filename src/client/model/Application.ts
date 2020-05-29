@@ -1,14 +1,57 @@
-import {IDataHook, DataLoader} from "model-react";
+import {IDataHook, DataLoader, Field, LoadableField} from "model-react";
 import {SocketModel} from "./socketUtils/SocketModel";
 import {INormalizedParkingGraph} from "../../_types/graph/IParkingGraph";
 import {Bot} from "./bot/Bot";
 
 export class ApplicationClass extends SocketModel {
-    protected bot = new DataLoader<Bot | undefined>(() => Bot.create(), undefined);
+    protected bot = new DataLoader<Bot | undefined>(async () => {
+        const bot = await Bot.create();
+
+        // Add the bot to the bots list, making sure that a previously externally created version is deleted
+        this.bots.set([
+            ...this.bots.get(null).filter(b => {
+                const same = b.getID() == bot.getID();
+                if (same) b.destroy();
+                return !same;
+            }),
+            bot,
+        ]);
+
+        return bot;
+    }, undefined);
+
+    protected bots = new Field([] as Bot[]);
     protected graph = new DataLoader<INormalizedParkingGraph | undefined>(
         () => this.socket.emitAsync("getGraph"),
         undefined
     );
+
+    /**
+     * Creates a new application
+     */
+    public constructor() {
+        super();
+
+        const addBot = async (id: string) => {
+            const bot = await Bot.create(id);
+            const bots = this.bots.get(null);
+            if (bots.find(b => b.getID() == id)) return;
+            this.bots.set([...bots, bot]);
+        };
+        this.socket.on("bots", async ids => {
+            await Promise.all(ids.map(addBot));
+        });
+        this.socket.on("addBot", addBot);
+        this.socket.on("removeBot", async id => {
+            this.bots.set([
+                ...this.bots.get(null).filter(b => {
+                    const same = b.getID() == id;
+                    if (same) b.destroy();
+                    return !same;
+                }),
+            ]);
+        });
+    }
 
     /**
      * Retrieves the parking graph
@@ -24,8 +67,17 @@ export class ApplicationClass extends SocketModel {
      * @param hook The hook to subscribe to changes
      * @returns The bot
      */
-    public getBot(hook: IDataHook): Bot | undefined {
+    public getControllableBot(hook: IDataHook): Bot | undefined {
         return this.bot.get(hook);
+    }
+
+    /**
+     * Retrieves all the bots in the parking lot
+     * @param hook The hook to subscribe to changes
+     * @returns All the bots
+     */
+    public getBots(hook: IDataHook): Bot[] {
+        return this.bots.get(hook);
     }
 
     // Some methods that can be used to manually alter the parking lot and see the effects

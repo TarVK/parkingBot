@@ -114,12 +114,31 @@ export abstract class AbstractSearchGraph {
         pedestrianEntrances: string[];
         pedestrianExits: string[];
         spots: string[];
+        botQueues: {[entranceID: string]: string};
     } {
+        // Get the closest bot queues to all entrances
+        const entrances = parkingGraph
+            .getNodes()
+            .filter(({meta}) => meta.original.tags.includes("entrance"));
+
+        const botQueues = {} as {[entranceID: string]: string};
+        const botQueueNodes = parkingGraph
+            .getNodes()
+            .filter(({meta}) => meta.original.tags.includes("botQueue"));
+        entrances.forEach(entrance => {
+            let closest = {node: null as null | string, dist: Infinity};
+            botQueueNodes.forEach(botQueue => {
+                const dx = botQueue.meta.original.x - entrance.meta.original.x;
+                const dy = botQueue.meta.original.y - entrance.meta.original.y;
+                const dist = dx * dx + dy * dy;
+                if (dist < closest.dist) closest = {node: botQueue.ID, dist};
+            });
+            botQueues[entrance.ID] = closest.node || "";
+        });
+
+        // Get all remaining nodes
         return {
-            carEntrances: parkingGraph
-                .getNodes()
-                .filter(({meta}) => meta.original.tags.includes("entrance"))
-                .map(({ID}) => ID),
+            carEntrances: entrances.map(({ID}) => ID),
             carExits: parkingGraph
                 .getNodes()
                 .filter(({meta}) => meta.original.tags.includes("exit"))
@@ -136,6 +155,7 @@ export abstract class AbstractSearchGraph {
                 .getNodes()
                 .filter(({meta}) => meta.original.tags.includes("spot"))
                 .map(({ID}) => ID),
+            botQueues,
         };
     }
 
@@ -255,6 +275,44 @@ export abstract class AbstractSearchGraph {
                 ),
             edges: graph.getEdges().filter(edge => this.hasAllEdgeTags(edge, tags)),
         };
+    }
+
+    /**
+     * Checks whether a given edges connects to a node with any of the given tags
+     * @param graph The graph the edge is from
+     * @param edge The edge to check
+     * @param tags The tags to check for
+     * @returns Whether it connects to a node fulfilling the criteria
+     */
+    protected edgeConnectsToNodesWithAnyTags(
+        graph: TransformableSearchGraph,
+        edge: ISymmetricEdge<ISearchEdgeMeta>,
+        tags: IParkingNodeTag | IParkingNodeTag[]
+    ) {
+        const startNode = graph.getNodeMeta(edge.start);
+        const endNode = graph.getNodeMeta(edge.end);
+        if (includesAny(startNode?.original.tags, tags as any)) return true;
+        if (includesAny(endNode?.original.tags, tags as any)) return true;
+        return false;
+    }
+
+    /**
+     * Checks whether a given edges connects to a node with all the given tags
+     * @param graph The graph the edge is from
+     * @param edge The edge to check
+     * @param tags The tags to check for
+     * @returns Whether it connects to a node fulfilling the criteria
+     */
+    protected edgeConnectsToNodesWithAllTags(
+        graph: TransformableSearchGraph,
+        edge: ISymmetricEdge<ISearchEdgeMeta>,
+        tags: IParkingNodeTag | IParkingNodeTag[]
+    ) {
+        const startNode = graph.getNodeMeta(edge.start);
+        const endNode = graph.getNodeMeta(edge.end);
+        if (includesAll(startNode?.original.tags, tags as any)) return true;
+        if (includesAll(endNode?.original.tags, tags as any)) return true;
+        return false;
     }
 
     // Turn functions

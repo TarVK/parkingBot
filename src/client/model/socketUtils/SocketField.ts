@@ -9,6 +9,7 @@ export class SocketField<T, S extends ISerializer<any, any> = ISerializer<T, T>>
     protected message: string;
     protected socket = getSocket();
     protected channel: S;
+    protected updateListener: (value: any) => void;
 
     /**
      * Creates a new socket field
@@ -25,10 +26,18 @@ export class SocketField<T, S extends ISerializer<any, any> = ISerializer<T, T>>
     ) {
         this.field = new Field(initial);
         this.message = message;
-        this.socket.on(message, value => {
+        this.updateListener = value => {
             this.field.set(channel.deserialize(value));
-        });
+        };
+        this.socket.on(message, this.updateListener);
         this.channel = channel;
+    }
+
+    /**
+     * Cleans up all listeners
+     */
+    public destroy() {
+        this.socket.off(this.message, this.updateListener);
     }
 
     /**
@@ -52,7 +61,7 @@ export class SocketField<T, S extends ISerializer<any, any> = ISerializer<T, T>>
                     this.message,
                     this.channel.serialize(value)
                 );
-                if (!resp.success) throw resp;
+                if (resp != null && !resp.success) throw resp;
                 return resp;
             } catch (e) {
                 throw {

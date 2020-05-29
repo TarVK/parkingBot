@@ -4,12 +4,15 @@ import {Car} from "./Car";
 import {TransformableGraph} from "../services/graph/transformations/TransformableGraph";
 import {ParkingSearchGraph} from "../services/graph/search/ParkingSearchGraph";
 import {IParkingSpaces} from "./_types/IParkingSpaces";
+import {ForeignEntityManager} from "./ForeignEntityManager";
+import {IRoute} from "../../_types/IRoute";
 
 export class ParkingLot {
     protected graph: INormalizedParkingGraph;
     protected searchGraph: ParkingSearchGraph;
     protected bots: Bot[] = [];
     protected parkingSpaces: IParkingSpaces = {};
+    protected entityManager = new ForeignEntityManager(this);
 
     /**
      * Creates a new parking lot with the given graph
@@ -50,7 +53,7 @@ export class ParkingLot {
         entranceID: string = "entrance",
         turnCost: number = 5,
         walkCost: number = 5
-    ): [string[], string[], string[], string[]] | undefined {
+    ): IRoute | undefined {
         return this.searchGraph.findParkingSpot({
             startID: entranceID,
             walkWeight: walkCost,
@@ -141,8 +144,25 @@ export class ParkingLot {
     public addBot(bot: Bot): void {
         if (this.bots.includes(bot)) return;
 
-        this.bots.push(bot);
+        this.broadcast("addBot", bot.getID());
+        bot.emit(
+            "bots",
+            this.bots.map(b => b.getID())
+        );
+
+        bot.setLot(this);
+        bot.emit(
+            "bots",
+            this.bots.map(b => b.getID())
+        );
         bot.emit("parkingSpaces", this.getSerializedSpaces());
+
+        this.bots.forEach(b => {
+            b.shareInitialDataWith(bot);
+            bot.shareInitialDataWith(b);
+        });
+        this.bots.push(bot);
+        this.entityManager.shareInitialDataWith(bot);
     }
 
     /**
@@ -151,7 +171,10 @@ export class ParkingLot {
      */
     public removeBot(bot: Bot): void {
         const index = this.bots.indexOf(bot);
-        if (index !== -1) this.bots.splice(index, 1);
+        if (index === -1) return;
+
+        this.bots.splice(index, 1);
+        this.broadcast("removeBot", bot.getID());
     }
 
     /**

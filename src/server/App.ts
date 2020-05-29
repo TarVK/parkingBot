@@ -19,8 +19,14 @@ export function broadcast(message: any, ...args: string[]) {
  */
 function setupAPI(socket: AsyncSocketConnection) {
     // Setup interaction
+    let bot = null as null | Bot;
     socket.on("addBot", () => {
-        parkingLot.addBot(new Bot(socket));
+        bot = new Bot(socket);
+        parkingLot.addBot(bot);
+        return bot.getID();
+    });
+    socket.on("disconnect", () => {
+        if (bot) parkingLot.removeBot(bot);
     });
 
     // Updating state interaction

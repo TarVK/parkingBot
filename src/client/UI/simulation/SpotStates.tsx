@@ -7,7 +7,7 @@ import {Circle} from "../../components/pixi/Circle";
 const colors = {taken: "#52307C", claimed: "#B491C8"};
 export const SpotStates: FC = () => {
     const [h] = useDataHook();
-    const bot = Application.getBot(h);
+    const bot = Application.getControllableBot(h);
     const spots = bot?.getParkingSpaces(h);
     const graph = Application.getParkingGraph(h);
     if (!spots || !graph) return null;

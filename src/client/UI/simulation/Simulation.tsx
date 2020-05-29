@@ -15,6 +15,7 @@ import {GraphClickHandler} from "../GraphClickHandler";
 import {IIndependentParkingNode} from "../../model/_types/IIndependentParkingNode";
 import {SpotControls} from "./SpotControls";
 import {SpotStates} from "./SpotStates";
+import {Bots} from "./Bots";
 
 const colors = ["#FFFF88", "#FFFF22", "#CCCC00", "#999900"];
 const pathParts = [
@@ -49,9 +50,9 @@ export const Simulation: FC = () => {
 
     const createPath = () => {
         addPath(
-            getAsync(h => Application.getBot(h)).then(bot =>
-                bot?.findAndClaimSpot(walkCost, turnCost)
-            ),
+            getAsync(h => Application.getControllableBot(h))
+                .then(bot => bot?.findAndClaimSpot(walkCost, turnCost))
+                .then(route => route?.car),
             true
         ).then(path => console.log(path));
     };
@@ -103,6 +104,7 @@ export const Simulation: FC = () => {
                                 radius={15}
                             />
                         )}
+                        <Bots />
                     </GraphClickHandler>
                 </Fragment>
             }
