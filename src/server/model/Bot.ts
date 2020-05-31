@@ -73,6 +73,15 @@ export class Bot {
         bot.emit(`bot-${this.getID()}/pos`, this.position);
     }
 
+    // Utils
+    /**
+     * Makes the bot follow a path
+     * @param path The path to follow
+     */
+    public followPath(path: string[]): void {
+        this.emit(`bot-${this.getID()}/followPath`, path);
+    }
+
     // Robot interaction
     /**
      * Emits a message to the bot

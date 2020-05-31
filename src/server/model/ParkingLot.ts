@@ -145,24 +145,32 @@ export class ParkingLot {
         if (this.bots.includes(bot)) return;
 
         this.broadcast("addBot", bot.getID());
-        bot.emit(
-            "bots",
-            this.bots.map(b => b.getID())
-        );
 
         bot.setLot(this);
-        bot.emit(
-            "bots",
-            this.bots.map(b => b.getID())
-        );
-        bot.emit("parkingSpaces", this.getSerializedSpaces());
+        bot.on("initBot", () => {
+            // Share data
+            bot.emit(
+                "bots",
+                this.bots.map(b => b.getID())
+            );
+            bot.emit("parkingSpaces", this.getSerializedSpaces());
+            this.bots.forEach(b => {
+                b.shareInitialDataWith(bot);
+                bot.shareInitialDataWith(b);
+            });
+            this.entityManager.shareInitialDataWith(bot);
 
-        this.bots.forEach(b => {
-            b.shareInitialDataWith(bot);
-            bot.shareInitialDataWith(b);
+            // Set potion
+            const spawnID = Object.keys(this.graph).find(ID =>
+                this.graph[ID].tags.includes("botSpawn")
+            );
+            if (!spawnID) return;
+            const path = this.searchGraph.getBotSpawnRoute(spawnID);
+            if (!path) return;
+            bot.followPath(path);
         });
+
         this.bots.push(bot);
-        this.entityManager.shareInitialDataWith(bot);
     }
 
     /**

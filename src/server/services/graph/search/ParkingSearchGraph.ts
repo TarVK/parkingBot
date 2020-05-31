@@ -24,8 +24,9 @@ export class ParkingSearchGraph extends AbstractSearchGraph {
     protected pedestrianEntranceGraph: ISearchGraph;
     protected carEntranceExitGraph: ISearchGraph;
     protected botReturnGraph: ISearchGraph;
+    protected botSpawnGraph: ISearchGraph;
 
-    protected interfaceNodes: {
+    public interfaceNodes: {
         carEntrances: string[];
         carExits: string[];
         pedestrianEntrances: string[];
@@ -54,6 +55,7 @@ export class ParkingSearchGraph extends AbstractSearchGraph {
             transformableParkingGraph
         );
         this.botReturnGraph = this.createBotReturnGraph(transformableParkingGraph);
+        this.botSpawnGraph = this.createBotSpawnGraph(transformableParkingGraph);
         this.interfaceNodes = this.getInterfaceNodes(transformableParkingGraph);
     }
 
@@ -241,6 +243,22 @@ export class ParkingSearchGraph extends AbstractSearchGraph {
 
             searchGraph.addReversedEdge(edge);
         });
+        return searchGraph.export();
+    }
+
+    /**
+     * Creates the graph that can be used for spawning bots
+     * @param parkingGraph The parking graph to create it from
+     * @returns The bot spawn graph
+     */
+    protected createBotSpawnGraph(parkingGraph: TransformableSearchGraph): ISearchGraph {
+        const searchGraph = new TransformableGraph<ISearchNodeMeta, ISearchEdgeMeta>();
+        const {
+            nodes: botNodes,
+            edges: botEdges,
+        } = this.getNodesAndEdgesWithAnyTags(parkingGraph, ["botPath"]);
+        botNodes.forEach(node => searchGraph.addNode(node));
+        botEdges.forEach(edge => searchGraph.addEdge(edge));
         return searchGraph.export();
     }
 
@@ -494,5 +512,36 @@ export class ParkingSearchGraph extends AbstractSearchGraph {
             car: carPath,
             bot: botPath,
         };
+    }
+
+    /**
+     * Retrieves a rout that the bot should follow when spawning
+     * @param spawnID The ID for the node to spawn the bot at
+     * @returns The path to reach the queue
+     */
+    public getBotSpawnRoute(spawnID: string): string[] | undefined {
+        const {distances, predecessors} = this.search(
+            this.botSpawnGraph,
+            spawnID,
+            (edge: ISearchEdge) => {
+                return edge.weight;
+            }
+        );
+
+        // Find the closest queue
+        let closest = {ID: "", distance: Infinity};
+        Object.values(this.interfaceNodes.botQueues).forEach(queueID => {
+            const dist = distances[queueID];
+            if (dist < closest.distance) {
+                closest = {ID: queueID, distance: dist};
+            }
+        });
+        if (!closest.ID) return;
+
+        // Get the route to the closest queue
+        return this.getOriginalPath(
+            this.createPath(predecessors, closest.ID),
+            this.botReturnGraph
+        );
     }
 }

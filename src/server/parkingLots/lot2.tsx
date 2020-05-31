@@ -2810,7 +2810,7 @@ export const lot = {
     "101": {
         x: 3,
         y: 3.5,
-        tags: [],
+        tags: ["botSpawn"],
         edges: [
             {
                 end: "0",

@@ -3,15 +3,34 @@ import {IRoute} from "../../../_types/IRoute";
 import {getSocket} from "../../AsyncSocketClient";
 import {SocketField} from "../socketUtils/SocketField";
 import {IParkingSpaces} from "../_types/IParkingSpaces";
-import {IDataHook, DataLoader, getAsync} from "model-react";
+import {IDataHook, DataLoader, getAsync, Field} from "model-react";
 import {IBotPosition} from "../../../_types/IBotPosition";
 import {INormalizedParkingGraph} from "../../../_types/graph/IParkingGraph";
 import {wait} from "../../../services/wait";
+import {IForeignEntity} from "../../../_types/IForeignEntity";
+import {Application} from "../Application";
+import {getMinimumDistance} from "../entities/getMinDistance";
+
+/**
+ * Calculates the distance between two points
+ * @param pos1 The first point
+ * @param pos2 The second point
+ * @returns The euclidean distance
+ */
+const getDistance = (pos1: {x: number; y: number}, pos2: {x: number; y: number}) => {
+    const dx = pos1.x - pos2.x;
+    const dy = pos1.y - pos2.y;
+    return Math.sqrt(dx * dx + dy * dy);
+};
 
 const speed = 3; // Unit=Meters/Second
+const maxFollowDist = 5; // Unit=Meters
+const minDistance = 2; // Unit=Meters
+
 export class Bot extends SocketModel {
     protected ID: string;
     protected controllable: boolean;
+    protected targetID = new Field(null as null | string);
     protected graph = new DataLoader<INormalizedParkingGraph | undefined>(
         () => this.socket.emitAsync("getGraph"),
         undefined
@@ -35,6 +54,10 @@ export class Bot extends SocketModel {
             graph: null,
             physical: {x: 0, y: 0, rotation: 0},
         });
+        if (controllable) {
+            this.socket.emit("initBot");
+            this.socket.on(`bot-${this.ID}/followPath`, path => this.followPath(path));
+        }
     }
 
     /**
@@ -52,6 +75,14 @@ export class Bot extends SocketModel {
      */
     public setPosition(position: IBotPosition): void {
         this.position.set(position);
+    }
+
+    /**
+     * Sets the target to guide
+     * @param ID The ID of the target
+     */
+    public setTarget(ID: string | null): void {
+        this.targetID.set(ID);
     }
 
     // Getters
@@ -81,18 +112,42 @@ export class Bot extends SocketModel {
         return this.position.get(hook);
     }
 
+    /**
+     * Retrieves the target entity that this bot should wait for (they should follow it)
+     * @param hook The hook to subscribe to changes
+     * @returns The targeted entity if available
+     */
+    public getTarget(hook: IDataHook): null | IForeignEntity {
+        const targetID = this.targetID.get(hook);
+        if (!targetID) return null;
+        const target =
+            Application.getEntityManager()
+                .getEntities(hook)
+                .find(e => e.ID == targetID) || null;
+        if (!target && hook && "markIsLoading" in hook) hook.markIsLoading?.();
+        return target;
+    }
+
     // Functionality
     /**
      * Follows the specified path
      * @param path The path to follow
+     * @param allowLastNoFollow Whether it is allowed that the target doesn't follow the last node
      * @returns A promise that resolves when the destination is reached
      */
-    protected async followPath(path: string[]): Promise<void> {
+    protected async followPath(
+        path: string[],
+        allowLastNoFollow: boolean = true
+    ): Promise<void> {
         const remainingPath = [...path];
         let nodeID = remainingPath.shift();
         let nextNodeID;
         while (nodeID && (nextNodeID = remainingPath.shift())) {
-            await this.moveToNode(nodeID, nextNodeID);
+            await this.moveToNode(
+                nodeID,
+                nextNodeID,
+                allowLastNoFollow && remainingPath.length == 0
+            );
             nodeID = nextNodeID;
         }
     }
@@ -101,9 +156,14 @@ export class Bot extends SocketModel {
      * Moves from the start node to the end node
      * @param start The ID of the node to start at
      * @param end  The ID of the node to end at
+     * @param allowNoFollow Whether it is allowed that the car doesn't follow
      * @returns A promise that resolves when the end is reached
      */
-    protected async moveToNode(start: string, end: string): Promise<void> {
+    protected async moveToNode(
+        start: string,
+        end: string,
+        allowNoFollow = false
+    ): Promise<void> {
         const graph = await getAsync(h => this.graph.get(h));
         if (!graph) return;
         const startNode = graph[start];
@@ -112,20 +172,51 @@ export class Bot extends SocketModel {
             dy = endNode.y - startNode.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        const getLoc = (per: number) => ({
+        const getPos = (per: number) => ({
             x: startNode.x * (1 - per) + endNode.x * per,
             y: startNode.y * (1 - per) + endNode.y * per,
             rotation: Math.atan2(dy, dx),
         });
-        const setPos = (per: number) => {
+
+        // Sets the position, considering that it shouldn't get too far ahead or run into others
+        const setPos = async (per: number, incr: number) => {
+            const newPer = Math.min(per + incr, 1);
+            const pos = getPos(newPer);
+            const curPos = this.getPosition(null).physical;
+
+            // Make sure the car is following
+            const target = await getAsync(h => this.getTarget(h));
+            const newTargetDist = !target ? 0 : getDistance(pos, target.pos);
+            const oldTargetDist = !target ? 0 : getDistance(curPos, target.pos);
+
+            const inRange =
+                newTargetDist < maxFollowDist || newTargetDist < oldTargetDist;
+            if (!inRange && !allowNoFollow) return per;
+
+            // Make sure there won't be a collision
+            const curDist = await getMinimumDistance(
+                curPos,
+                e => e != this,
+                e => (e instanceof Bot ? 0.8 : 1)
+            );
+            const newDist = await getMinimumDistance(
+                pos,
+                e => e != this,
+                e => (e instanceof Bot ? 0.8 : 1)
+            );
+            const noCollide = newDist > minDistance || newDist > curDist;
+            if (!noCollide) return per;
+
+            // Move to the position
             this.setPosition({
-                physical: getLoc(per),
+                physical: pos,
                 graph: {
                     start,
                     end,
                     per,
                 },
             });
+            return newPer;
         };
 
         // Set initial pos, and create an interval that keeps incrementing till the end is reached
@@ -136,16 +227,33 @@ export class Bot extends SocketModel {
             const stepPer = stepMeters / distance;
             let per = stepPer;
 
-            setPos(per);
-            const ID = setInterval(() => {
-                per += stepPer;
-                if (per >= 1) {
-                    per = 1;
+            setPos(per, 0);
+            let prevFinished = true; // Keep track of whether the previous update was processed
+            const ID = setInterval(async () => {
+                if (!prevFinished) return;
+                prevFinished = false;
+                per = await setPos(per, stepPer);
+                if (per == 1) {
                     clearInterval(ID);
                     res();
                 }
-                setPos(per);
+                prevFinished = true;
             }, 1000 / frequency);
+        });
+    }
+
+    /**
+     * Guides an entity to a spot
+     * @param targetID The entity to guide
+     * @param route The path to guide the target over
+     */
+    public async guideToSpot(targetID: string, route: IRoute): Promise<void> {
+        this.setTarget(targetID);
+        return this.followPath(route.bot.path[0]).then(async () => {
+            this.setTarget(null);
+            await wait(3000);
+            await this.socket.emitAsync("takeSpace", route.car[3][0]);
+            return this.followPath(route.bot.path[1]);
         });
     }
 
@@ -168,11 +276,6 @@ export class Bot extends SocketModel {
             const parkingSpotID = route.car[1][0];
             const claimedSpot = this.claimSpot(parkingSpotID);
             if (claimedSpot) {
-                this.followPath(route.bot.path[0]).then(async () => {
-                    console.log(route.bot);
-                    await wait(3000);
-                    this.followPath(route.bot.path[1]);
-                });
                 return route;
             }
         } while (true);

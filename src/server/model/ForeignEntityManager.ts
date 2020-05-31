@@ -1,4 +1,4 @@
-import {IForeignEntity} from "./_types/IForeignEntity";
+import {IForeignEntity} from "../../_types/IForeignEntity";
 import {ParkingLot} from "./ParkingLot";
 import {Bot} from "./Bot";
 
@@ -6,7 +6,7 @@ import {Bot} from "./Bot";
  * Manages shared data of foreign entities (people, cars, etc), mostly intended for the simulation
  */
 export class ForeignEntityManager {
-    protected entities: IForeignEntity[];
+    protected entities: IForeignEntity[] = [];
     protected lot: ParkingLot;
 
     /**
@@ -23,9 +23,9 @@ export class ForeignEntityManager {
      */
     public shareInitialDataWith(bot: Bot): void {
         bot.emit("foreignEntities", this.entities);
-        bot.on("addEntity", entity => this.addEntity(entity));
-        bot.on("updateEntity", entity => this.updateEntity(entity));
-        bot.on("removeEntity", entity => this.removeEntity(entity));
+        bot.on("foreignEntities/add", entity => this.addEntity(entity));
+        bot.on("foreignEntities/update", entity => this.updateEntity(entity));
+        bot.on("foreignEntities/remove", entity => this.removeEntity(entity));
     }
 
     // Getters

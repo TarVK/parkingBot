@@ -16,6 +16,7 @@ import {IIndependentParkingNode} from "../../model/_types/IIndependentParkingNod
 import {SpotControls} from "./SpotControls";
 import {SpotStates} from "./SpotStates";
 import {Bots} from "./Bots";
+import {ForeignEntities} from "./ForeignEntities";
 
 const colors = ["#FFFF88", "#FFFF22", "#CCCC00", "#999900"];
 const pathParts = [
@@ -66,6 +67,9 @@ export const Simulation: FC = () => {
                 .map(ID => Application.releaseSpace(ID))
         );
     };
+    const addCustomer = () => {
+        Application.addCustomer(walkCost, turnCost);
+    };
 
     if (!graph) return <div>loading</div>;
     return (
@@ -105,6 +109,7 @@ export const Simulation: FC = () => {
                             />
                         )}
                         <Bots />
+                        <ForeignEntities />
                     </GraphClickHandler>
                 </Fragment>
             }
@@ -157,6 +162,7 @@ export const Simulation: FC = () => {
                         <PrimaryButton onClick={releaseSpots}>
                             Release all spaces
                         </PrimaryButton>
+                        <PrimaryButton onClick={addCustomer}>Add customer</PrimaryButton>
                     </div>
                 </Fragment>
             }
