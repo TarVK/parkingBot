@@ -1,10 +1,11 @@
 import {SocketModel} from "../socketUtils/SocketModel";
 import {uuid} from "uuidv4";
 import {IDataHook, getAsync} from "model-react";
-import {IForeignEntity} from "../../../_types/IForeignEntity";
+import {IForeignEntity, ICarEntity} from "../../../_types/IForeignEntity";
 import {Application} from "../Application";
 import {INormalizedParkingGraph} from "../../../_types/graph/IParkingGraph";
 import {getMinimumDistance} from "./getMinDistance";
+import {Bot} from "../bot/Bot";
 
 /**
  * A class to represent a foreign entity, providing simple methods to guide it
@@ -15,36 +16,73 @@ export class ForeignEntity extends SocketModel {
     protected me: IForeignEntity;
     protected randomOffset: {x: number; y: number};
     protected speed = 3; // Unit=Meters/Second
-    protected minDistance = 2; // Unit=Meters
+    protected minDistance = 2.4; // Unit=Meters
     protected unloadListener = () => this.destroy();
     protected ignoreEntities: string[] = [];
 
     /**
      * Creates a new foreign entity
+     * @param type The type of entity to create
+     * @param size The size of the entity
+     * @param pos The position of the entity
+     * @param orientation The orientation of the entity
+     * @param randomOffset The random offset the entity should have on the graph
      */
     public constructor(
         type: string,
         size: {width: number; height: number},
-        pos: {x: number; y: number} = {x: 0, y: 0},
+        pos?: {x: number; y: number},
+        orientation?: number,
+        randomOffset?: {x: number; y: number}
+    );
+
+    /**
+     * Creates a controller for a foreign entity
+     * @param ID the ID of the entity to control
+     */
+    public constructor(ID: string);
+
+    /**
+     * Creates a new foreign entity
+     * @param type The type of entity to create
+     * @param size The size of the entity
+     * @param pos The position of the entity
+     * @param orientation The orientation of the entity
+     * @param randomOffset The random offset the entity should have on the graph
+     */
+    public constructor(
+        type: string,
+        size?: {width: number; height: number},
+        pos: {x: number; y: number} = {x: -Infinity, y: -Infinity},
         orientation: number = 0,
         randomOffset: {x: number; y: number} = {x: 0, y: 0}
     ) {
         super();
 
-        this.randomOffset = randomOffset;
-        this.me = {
-            ID: this.ID,
-            type,
-            size,
-            pos: {
-                x: pos.x + randomOffset.x,
-                y: pos.y + randomOffset.y,
-            },
-            rotation: orientation,
-        };
-        window.addEventListener("beforeunload", this.unloadListener);
-        this.m.addEntity(this.me);
+        if (size) {
+            this.randomOffset = randomOffset;
+            this.me = {
+                ID: this.ID,
+                type,
+                size,
+                pos: {
+                    x: pos.x + randomOffset.x,
+                    y: pos.y + randomOffset.y,
+                },
+                rotation: orientation,
+            };
+            this.m.addEntity(this.me);
+        } else {
+            // console.log("Detect");
+            this.randomOffset = {x: 0, y: 0};
+            const ent = this.m.getEntities(null).find(e => e.ID == type);
+            if (!ent) throw Error(`No entity with ID ${type} exists`);
+            this.me = ent;
+            this.ID = type;
+        }
+
         this.ignoreEntities.push(this.ID);
+        window.addEventListener("beforeunload", this.unloadListener);
     }
 
     // Getters
@@ -92,8 +130,7 @@ export class ForeignEntity extends SocketModel {
             x: pos.x + this.randomOffset.x,
             y: pos.y + this.randomOffset.y,
         };
-        this.me.pos = pos;
-        this.m.updateEntity({
+        this.update({
             ...this.get(),
             pos,
         });
@@ -104,8 +141,16 @@ export class ForeignEntity extends SocketModel {
      * @param rotation The rotation in radian (0 is right)
      */
     public setRotation(rotation: number): void {
-        this.me.rotation = rotation;
-        this.m.updateEntity({...this.get(), rotation});
+        this.update({...this.get(), rotation});
+    }
+
+    /**
+     * Updates the data of this entity
+     * @param newData The new data
+     */
+    protected update(newData: IForeignEntity): void {
+        this.me = newData;
+        this.m.updateEntity(newData);
     }
 
     // Functions
@@ -122,6 +167,15 @@ export class ForeignEntity extends SocketModel {
             await this.moveToNode(nodeID, nextNodeID);
             nodeID = nextNodeID;
         }
+    }
+
+    /**
+     * Checks whether this entity can collide with another
+     * @param e THe entity to check
+     * @returns Whether the entities can collide
+     */
+    protected canCollideWithEntity(e: IForeignEntity | Bot): boolean {
+        return !("type" in e);
     }
 
     /**
@@ -152,13 +206,11 @@ export class ForeignEntity extends SocketModel {
             const curPos = this.me.pos;
 
             // Make sure there won't be a collision
-            const curDist = await getMinimumDistance(
-                curPos,
-                e => !("type" in e) || !this.ignoreEntities.includes(e.ID)
+            const curDist = await getMinimumDistance(curPos, e =>
+                this.canCollideWithEntity(e)
             );
-            const newDist = await getMinimumDistance(
-                pos.pos,
-                e => !("type" in e) || !this.ignoreEntities.includes(e.ID)
+            const newDist = await getMinimumDistance(pos.pos, e =>
+                this.canCollideWithEntity(e)
             );
             const noCollide = newDist > this.minDistance || newDist > curDist;
             if (!noCollide) return per;

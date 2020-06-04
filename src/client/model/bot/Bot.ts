@@ -9,28 +9,17 @@ import {INormalizedParkingGraph} from "../../../_types/graph/IParkingGraph";
 import {wait} from "../../../services/wait";
 import {IForeignEntity} from "../../../_types/IForeignEntity";
 import {Application} from "../Application";
-import {getMinimumDistance} from "../entities/getMinDistance";
-
-/**
- * Calculates the distance between two points
- * @param pos1 The first point
- * @param pos2 The second point
- * @returns The euclidean distance
- */
-const getDistance = (pos1: {x: number; y: number}, pos2: {x: number; y: number}) => {
-    const dx = pos1.x - pos2.x;
-    const dy = pos1.y - pos2.y;
-    return Math.sqrt(dx * dx + dy * dy);
-};
+import {getMinimumDistance, getDistance} from "../entities/getMinDistance";
 
 const speed = 3; // Unit=Meters/Second
-const maxFollowDist = 5; // Unit=Meters
-const minDistance = 2; // Unit=Meters
+const maxFollowDist = 7; // Unit=Meters
+const minDistance = 2.5; // Unit=Meters
 
 export class Bot extends SocketModel {
     protected ID: string;
     protected controllable: boolean;
     protected targetID = new Field(null as null | string);
+    protected busy = new Field(false);
     protected graph = new DataLoader<INormalizedParkingGraph | undefined>(
         () => this.socket.emitAsync("getGraph"),
         undefined
@@ -52,11 +41,15 @@ export class Bot extends SocketModel {
         this.controllable = controllable;
         this.position = new SocketField<IBotPosition>(`bot-${this.ID}/pos`, {
             graph: null,
-            physical: {x: 0, y: 0, rotation: 0},
+            physical: {x: -1e6, y: -1e6, rotation: 0},
         });
         if (controllable) {
             this.socket.emit("initBot");
-            this.socket.on(`bot-${this.ID}/followPath`, path => this.followPath(path));
+            this.socket.on(`bot-${this.ID}/followPath`, async path => {
+                this.busy.set(true);
+                await this.followPath(path, false, true);
+                this.busy.set(false);
+            });
         }
     }
 
@@ -128,16 +121,27 @@ export class Bot extends SocketModel {
         return target;
     }
 
+    /**
+     * Checks whether the bot is currently busy
+     * @param hook The hook to subscribe to changes
+     * @returns Whether the bot is busy
+     */
+    public isBusy(hook: IDataHook): boolean {
+        return this.busy.get(hook);
+    }
+
     // Functionality
     /**
      * Follows the specified path
      * @param path The path to follow
      * @param allowLastNoFollow Whether it is allowed that the target doesn't follow the last node
+     * @param slowStartup Wait some time before starting driving again after being blocked
      * @returns A promise that resolves when the destination is reached
      */
     protected async followPath(
         path: string[],
-        allowLastNoFollow: boolean = true
+        allowLastNoFollow: boolean = true,
+        slowStartup: boolean = false
     ): Promise<void> {
         const remainingPath = [...path];
         let nodeID = remainingPath.shift();
@@ -146,10 +150,20 @@ export class Bot extends SocketModel {
             await this.moveToNode(
                 nodeID,
                 nextNodeID,
-                allowLastNoFollow && remainingPath.length == 0
+                allowLastNoFollow && remainingPath.length == 0,
+                slowStartup
             );
             nodeID = nextNodeID;
         }
+    }
+
+    /**
+     * Checks whether this entity can collide with another
+     * @param e THe entity to check
+     * @returns Whether the entities can collide
+     */
+    protected canCollideWithEntity(e: IForeignEntity | Bot): boolean {
+        return e != this && !("type" in e);
     }
 
     /**
@@ -157,12 +171,14 @@ export class Bot extends SocketModel {
      * @param start The ID of the node to start at
      * @param end  The ID of the node to end at
      * @param allowNoFollow Whether it is allowed that the car doesn't follow
+     * @param slowStartup Wait some time before starting driving again after being blocked
      * @returns A promise that resolves when the end is reached
      */
     protected async moveToNode(
         start: string,
         end: string,
-        allowNoFollow = false
+        allowNoFollow = false,
+        slowStartup: boolean = false
     ): Promise<void> {
         const graph = await getAsync(h => this.graph.get(h));
         if (!graph) return;
@@ -179,7 +195,7 @@ export class Bot extends SocketModel {
         });
 
         // Sets the position, considering that it shouldn't get too far ahead or run into others
-        const setPos = async (per: number, incr: number) => {
+        const setPos = async (prevPer: number, per: number, incr: number) => {
             const newPer = Math.min(per + incr, 1);
             const pos = getPos(newPer);
             const curPos = this.getPosition(null).physical;
@@ -194,15 +210,11 @@ export class Bot extends SocketModel {
             if (!inRange && !allowNoFollow) return per;
 
             // Make sure there won't be a collision
-            const curDist = await getMinimumDistance(
-                curPos,
-                e => e != this,
-                e => (e instanceof Bot ? 0.8 : 1)
+            const curDist = await getMinimumDistance(curPos, e =>
+                this.canCollideWithEntity(e)
             );
-            const newDist = await getMinimumDistance(
-                pos,
-                e => e != this,
-                e => (e instanceof Bot ? 0.8 : 1)
+            const newDist = await getMinimumDistance(pos, e =>
+                this.canCollideWithEntity(e)
             );
             const noCollide = newDist > minDistance || newDist > curDist;
             if (!noCollide) return per;
@@ -216,23 +228,30 @@ export class Bot extends SocketModel {
                     per,
                 },
             });
+
+            // If there was no movement in the previous cycle, and we want a slow startup, add a delay
+            if (slowStartup && prevPer == per) await wait(1000);
             return newPer;
         };
 
         // Set initial pos, and create an interval that keeps incrementing till the end is reached
-        return new Promise((res, rej) => {
+        return new Promise(async (res, rej) => {
             let frequency = 20; // Unit=Times/Second
 
             const stepMeters = speed / frequency;
             const stepPer = stepMeters / distance;
-            let per = stepPer;
+            let per = 0;
+            let prevPer = 0;
+            per = await setPos(-1, per, stepPer);
 
-            setPos(per, 0);
             let prevFinished = true; // Keep track of whether the previous update was processed
             const ID = setInterval(async () => {
                 if (!prevFinished) return;
                 prevFinished = false;
-                per = await setPos(per, stepPer);
+                const newPer = await setPos(prevPer, per, stepPer);
+                prevPer = per;
+                per = newPer;
+
                 if (per == 1) {
                     clearInterval(ID);
                     res();
@@ -248,13 +267,18 @@ export class Bot extends SocketModel {
      * @param route The path to guide the target over
      */
     public async guideToSpot(targetID: string, route: IRoute): Promise<void> {
+        this.busy.set(true);
+
         this.setTarget(targetID);
-        return this.followPath(route.bot.path[0]).then(async () => {
-            this.setTarget(null);
-            await wait(3000);
-            await this.socket.emitAsync("takeSpace", route.car[3][0]);
-            return this.followPath(route.bot.path[1]);
-        });
+        await this.followPath(route.bot.path[0]);
+        this.setTarget(null);
+
+        await wait(3000);
+
+        await this.socket.emitAsync("takeSpace", route.car[3][0]);
+        await this.followPath(route.bot.path[1], false, true);
+
+        this.busy.set(false);
     }
 
     /**

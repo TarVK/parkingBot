@@ -5,21 +5,11 @@ import {IParkingEdge} from "../../_types/graph/IParkingEdge";
 import {includesAny} from "../../services/arrayUtils";
 import {IIndependentParkingEdge} from "./_types/IIndependentParkingEdge";
 import {IIndependentParkingNode} from "./_types/IIndependentParkingNode";
+import {parkingEdgeTags} from "../../_types/graph/IParkingEdgeTag";
+import {parkingNodeTags} from "../../_types/graph/IParkingNodeTag";
 
-const visibleNodeTags = [
-    "spot" as const,
-    "entrance" as const,
-    "exit" as const,
-    "pedestrianEntrance" as const,
-    "pedestrianExit" as const,
-    "empty" as const,
-];
-const visibleEdgeTags = [
-    "carPath" as const,
-    "pedestrianPath" as const,
-    "botPath" as const,
-    "empty" as const,
-];
+const visibleNodeTags = [...parkingNodeTags, "empty" as const];
+const visibleEdgeTags = [...parkingEdgeTags, "empty" as const];
 export class GraphFilter {
     // Filters
     protected visibleNodes = new Field(visibleNodeTags);

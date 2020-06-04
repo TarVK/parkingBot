@@ -10,7 +10,7 @@ export class Bot {
     protected ID: string = uuid();
     protected position: IBotPosition = {
         graph: null,
-        physical: {x: 0, y: 0, rotation: 0},
+        physical: {x: -1e6, y: -1e6, rotation: 0},
     };
 
     /**

@@ -6,6 +6,10 @@ import {ForeignEntityManager} from "./entities/ForeignEntityManager";
 import {Car} from "./entities/Car";
 import {wait} from "../../services/wait";
 import {Person} from "./entities/Person";
+import {getDistance} from "./entities/getMinDistance";
+import {ICarEntity} from "../../_types/IForeignEntity";
+import {uuid} from "uuidv4";
+import {IRoute} from "../../_types/IRoute";
 
 export class ApplicationClass extends SocketModel {
     protected bot = new DataLoader<Bot | undefined>(async () => {
@@ -24,6 +28,7 @@ export class ApplicationClass extends SocketModel {
         return bot;
     }, undefined);
 
+    protected route = new Field(null as IRoute | null);
     protected bots = new Field([] as Bot[]);
     protected graph = new DataLoader<INormalizedParkingGraph | undefined>(
         () => this.socket.emitAsync("getGraph"),
@@ -93,6 +98,15 @@ export class ApplicationClass extends SocketModel {
         return this.entityManager;
     }
 
+    /**
+     * Retrieves the rout that the bot of this client is currently handling
+     * @param hook The hook to subscribe to changes
+     * @returns The rout if any
+     */
+    public getRoute(hook: IDataHook): IRoute | null {
+        return this.route.get(hook);
+    }
+
     // Some methods that can be used to manually alter the parking lot and see the effects
     /**
      * Claims the specified spot
@@ -129,43 +143,54 @@ export class ApplicationClass extends SocketModel {
 
     // Methods to guide the simulation
     /**
-     * Adds a customer to the simulation, and coordinates the process of finding a spot for that customer
-     * @param walkCost The walk cost
-     * @param turnCost The turn cost
-     * @returns A promise that resolves once the customer exited the lot
+     * Looks for any customers that are waiting, and helps them to a spot if found
      */
-    public async addCustomer(walkCost: number, turnCost: number): Promise<void> {
+    public async lookForCustomers(): Promise<void> {
+        const bot = this.getControllableBot(null);
+        if (bot && !bot.isBusy(null)) {
+            const entities = this.getEntityManager().getEntities(null);
+            const car = entities
+                .filter(e => e.type == "car" && !(e as any).helped)
+                .find(e => getDistance(e.pos, bot.getPosition(null).physical) < 3.5);
+            if (car) await this.guideCustomer(car as ICarEntity);
+        }
+    }
+
+    /**
+     * Guides a car to their parking spot
+     * @param customer The car to guide
+     */
+    public async guideCustomer(customer: ICarEntity): Promise<void> {
         const bot = await getAsync(h => this.getControllableBot(h));
 
         // Get the entrance to add the car to
         const graph = await getAsync(h => this.getParkingGraph(h));
         if (!graph || !bot) return;
-        const entranceIDs = Object.keys(graph).filter(ID =>
-            graph[ID].tags.includes("entrance")
-        );
-        const entranceID = entranceIDs[Math.floor(Math.random() * entranceIDs.length)];
-        const entrance = graph[entranceID];
 
         // Create the car to guide
-        const car = new Car(entrance, entrance.edges[0].angle);
+        const car = new Car(customer.ID);
+        // console.log(customer.ID, car);
 
         // Obtain a spot and guide the car to it
-        const route = await bot.findAndClaimSpot(walkCost, turnCost);
+        const route = await bot.findAndClaimSpot(
+            customer.preferences.walkCost,
+            customer.preferences.turnCost
+        );
         if (!route) {
             // Handle lot being full
             return;
         }
+        this.route.set(route);
 
         const peopleCount = Math.floor(Math.random() * 4) + 1;
-        wait(500).then(() => {
-            bot.guideToSpot(car.getID(), route);
-        });
         car.followPath(route.car[0]).then(async () => {
+            await wait(2500);
+
             // Let people leave the lot
             await this.createPeople(peopleCount, route.car[1], car);
 
             // Wait for a random period before letting people return
-            await wait((Math.random() * 10 + 5) * 1000);
+            await wait((Math.random() * 60 * 5 + 20) * 1000);
 
             // Let the people enter the car again
             await this.createPeople(peopleCount, route.car[2], car);
@@ -177,6 +202,8 @@ export class ApplicationClass extends SocketModel {
             car.destroy();
             this.releaseSpace(route.car[3][0]);
         });
+
+        await wait(10).then(() => bot.guideToSpot(car.getID(), route));
     }
 
     /**
@@ -188,15 +215,39 @@ export class ApplicationClass extends SocketModel {
      */
     protected async createPeople(count: number, path: string[], car: Car): Promise<void> {
         let promises = [] as Promise<void>[];
-        let people = [] as Person[];
         for (var i = 0; i < count; i++) {
             const person = new Person(this.graph[path[0]]);
             person.addIgnoreEntity(car.getID());
-            people.push(person);
             promises.push(person.followPath(path).then(() => person.destroy()));
         }
-        people.forEach(p => people.forEach(c => p.addIgnoreEntity(c.getID())));
         await Promise.all(promises);
+    }
+
+    /**
+     * Adds a customer to the simulation, and coordinates the process of finding a spot for that customer
+     * @param walkCost The walk cost
+     * @param turnCost The turn cost
+     * @returns A promise that resolves once the customer exited the lot
+     */
+    public async addCustomer(walkCost: number, turnCost: number): Promise<void> {
+        const graph = await getAsync(h => this.getParkingGraph(h));
+        if (!graph) return;
+
+        const entranceIDs = Object.keys(graph).filter(ID =>
+            graph[ID].tags.includes("entrance")
+        );
+        const entranceID = entranceIDs[Math.floor(Math.random() * entranceIDs.length)];
+        const entrance = graph[entranceID];
+
+        this.getEntityManager().addEntity({
+            ID: uuid(),
+            size: {height: 4, width: 2},
+            pos: entrance,
+            type: "car",
+            rotation: 0,
+            preferences: {turnCost, walkCost},
+            helped: false,
+        });
     }
 }
 

@@ -40,3 +40,18 @@ export const getMinimumDistance = async (
     });
     return minDistance;
 };
+
+/**
+ * Calculates the distance between two points
+ * @param pos1 The first point
+ * @param pos2 The second point
+ * @returns The euclidean distance
+ */
+export const getDistance = (
+    pos1: {x: number; y: number},
+    pos2: {x: number; y: number}
+) => {
+    const dx = pos1.x - pos2.x;
+    const dy = pos1.y - pos2.y;
+    return Math.sqrt(dx * dx + dy * dy);
+};

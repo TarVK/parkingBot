@@ -14,4 +14,5 @@ export const parkingNodeTags = [
     "pedestrianEntrance",
     "pedestrianExit",
     "botQueue",
+    "botSpawn",
 ] as const;

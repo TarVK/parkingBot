@@ -5,7 +5,6 @@ import {Field, IDataHook} from "model-react";
 import {IPartialIndependentParkingEdge} from "../_types/IIndependentParkingEdge";
 import {IIndependentParkingNode} from "../_types/IIndependentParkingNode";
 import {SelectorTool} from "./selectorTool/SelectorTool";
-import {IParkingEdge} from "../../../_types/graph/IParkingEdge";
 import {IParkingNode} from "../../../_types/graph/IParkingNode";
 import {EdgeTool} from "./EdgeTool";
 import {NodeTool} from "./NodeTool";

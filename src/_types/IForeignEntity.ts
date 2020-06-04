@@ -1,4 +1,12 @@
-export type IForeignEntity = {
+export type IForeignEntity = IForeignEntityBase | ICarEntity;
+
+export type ICarEntity = {
+    type: "car";
+    preferences: {walkCost: number; turnCost: number};
+    helped: boolean;
+} & IForeignEntityBase;
+
+export type IForeignEntityBase = {
     ID: string;
     type: string;
     pos: {

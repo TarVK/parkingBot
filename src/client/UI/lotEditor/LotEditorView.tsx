@@ -111,7 +111,6 @@ const useLotInputHooks = (lot: null | LotEditor) => {
         const scrollListener = e => {
             if (e.ctrlKey) return;
             if (lot) {
-                console.log(e);
                 const tools = ["selector", "edgeCreator", "nodeCreator"] as const;
                 const index = tools.indexOf(lot.getSelectedToolName(null));
                 lot.selectTool(tools[(3 + index + (e.deltaY > 0 ? -1 : 1)) % 3]);
@@ -136,7 +135,6 @@ const useLotInputHooks = (lot: null | LotEditor) => {
 
 /*
  * TODO:
- * - Add export button and window
  * - Add help window
  * - Allow selected nodes to be dragged
  * - Select nearby edge or node when a node/edge is deleted

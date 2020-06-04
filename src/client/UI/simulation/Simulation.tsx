@@ -26,17 +26,14 @@ const pathParts = [
     "car exit",
 ] as const;
 export const Simulation: FC = () => {
-    const [h, s] = useDataHook();
+    const [h] = useDataHook();
     const theme = useTheme();
+    const route = Application.getRoute(h);
 
     const [showPathParts, setShowPathParts] = useState([
         pathParts[0],
         pathParts[3],
     ] as typeof pathParts[number][]);
-    const [addPath, _, pathse] = useActionState<
-        [string[], string[], string[], string[]] | undefined
-    >(h, false);
-    const paths = (pathse as any) as null | string[][]; // bug: https://github.com/TarVK/model-react/issues/7
 
     const [graph, setGraph] = useState(null as null | GraphFilter);
     useEffect(() => {
@@ -49,14 +46,6 @@ export const Simulation: FC = () => {
     const [walkCost, setWalkCost] = useState(1.5);
     const [turnCost, setTurnCost] = useState(0);
 
-    const createPath = () => {
-        addPath(
-            getAsync(h => Application.getControllableBot(h))
-                .then(bot => bot?.findAndClaimSpot(walkCost, turnCost))
-                .then(route => route?.car),
-            true
-        ).then(path => console.log(path));
-    };
     const releaseSpots = async () => {
         if (!graph) return;
         const g = await getAsync(h => graph.getGraph(h));
@@ -70,6 +59,17 @@ export const Simulation: FC = () => {
     const addCustomer = () => {
         Application.addCustomer(walkCost, turnCost);
     };
+
+    //Main loop to look for new customers
+    useEffect(() => {
+        let stopped = false;
+        const check = async () => {
+            await Application.lookForCustomers();
+            if (!stopped) setTimeout(check, 100);
+        };
+        check();
+        return () => void (stopped = true);
+    }, [Application.getControllableBot(h)]);
 
     if (!graph) return <div>loading</div>;
     return (
@@ -89,8 +89,8 @@ export const Simulation: FC = () => {
                         }}>
                         <FilterableGraphView graph={graph} />
                         <SpotStates />
-                        {paths &&
-                            paths
+                        {route &&
+                            route.car
                                 .filter((p, i) => showPathParts.includes(pathParts[i]))
                                 .map((path, i) => (
                                     <Path
@@ -101,10 +101,10 @@ export const Simulation: FC = () => {
                                         width={4}
                                     />
                                 ))}
-                        {paths && (
+                        {route && (
                             <Circle
                                 color={colors[0]}
-                                pos={graph.getGraph(h)[paths[1][0]]}
+                                pos={graph.getGraph(h)[route.car[1][0]]}
                                 radius={15}
                             />
                         )}
@@ -115,54 +115,58 @@ export const Simulation: FC = () => {
             }
             sidebar={
                 <Fragment>
-                    <div
-                        css={{
-                            background: theme.palette.themeLighter,
-                            padding: theme.spacing.m,
-                        }}>
-                        <FilterableGraphFilters graph={graph} />
-                        <TagSelector
-                            label="Path to display"
-                            options={pathParts}
-                            selected={showPathParts}
-                            onChange={v => setShowPathParts(v)}
-                        />
-                    </div>
+                    <div css={{height: "100%", display: "flex", flexDirection: "column"}}>
+                        <div
+                            css={{
+                                background: theme.palette.themeLighter,
+                                padding: theme.spacing.m,
+                            }}>
+                            <FilterableGraphFilters graph={graph} />
+                            <TagSelector
+                                label="Path to display"
+                                options={pathParts}
+                                selected={showPathParts}
+                                onChange={v => setShowPathParts(v)}
+                            />
+                        </div>
 
-                    <div
-                        css={{
-                            padding: theme.spacing.m,
-                        }}>
-                        <TextField
-                            label="walk cost"
-                            type="number"
-                            value={walkCost + ""}
-                            onChange={(e, v) => setWalkCost(Number(v))}
-                        />
-                        <TextField
-                            label="turn cost"
-                            type="number"
-                            value={turnCost + ""}
-                            onChange={(e, v) => setTurnCost(Number(v))}
-                        />
-                        <LoaderSwitch {...s} onLoad="loading">
-                            <PrimaryButton onClick={createPath}>
-                                create path
+                        <div
+                            css={{
+                                padding: theme.spacing.m,
+                            }}>
+                            <TextField
+                                label="walk cost"
+                                type="number"
+                                value={walkCost + ""}
+                                onChange={(e, v) => setWalkCost(Number(v))}
+                            />
+                            <TextField
+                                label="turn cost"
+                                type="number"
+                                value={turnCost + ""}
+                                onChange={(e, v) => setTurnCost(Number(v))}
+                            />
+                            <PrimaryButton
+                                onClick={addCustomer}
+                                css={{marginTop: 15, width: "100%"}}>
+                                Add customer
                             </PrimaryButton>
-                        </LoaderSwitch>
-                    </div>
+                        </div>
 
-                    <div
-                        css={{
-                            padding: theme.spacing.m,
-                        }}>
-                        {selectedNodeID != null && (
-                            <SpotControls spotID={selectedNodeID} />
-                        )}
-                        <PrimaryButton onClick={releaseSpots}>
-                            Release all spaces
-                        </PrimaryButton>
-                        <PrimaryButton onClick={addCustomer}>Add customer</PrimaryButton>
+                        <div css={{flexGrow: 1}}></div>
+                        <div
+                            css={{
+                                padding: theme.spacing.m,
+                            }}>
+                            {selectedNodeID != null && (
+                                <SpotControls spotID={selectedNodeID} />
+                            )}
+                            <PrimaryButton
+                                onClick={releaseSpots}
+                                css={{marginTop: 15, width: "100%"}}>
+                                Release all spaces
+                            </PrimaryButton>
+                        </div>
                     </div>
                 </Fragment>
             }
