@@ -1,7 +1,7 @@
 {
-    "name": "them-cards",
+    "name": "bot-parker",
     "version": "0.0.0",
-    "description": "You know, them cards",
+    "description": "Just a university project to design a robot to guide cars to parking spaces",
     "private": true,
     "scripts": {
         "dev-server": "npm run build-server && concurrently \"tsc -w --incremental\"  \"cpx \\\"src/**/*.{html,png,jpg,json}\\\"  \\\"build\\\" --watch --verbose\" \"nodemon build/server/index.js dev\"",

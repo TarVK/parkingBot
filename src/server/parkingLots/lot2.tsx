@@ -38,12 +38,6 @@ export const lot = {
         tags: [],
         edges: [
             {
-                end: "2",
-                tags: ["pedestrianPath", "carPath"],
-                distance: 2.5,
-                angle: -1.5707963267948966,
-            },
-            {
                 end: "46",
                 tags: ["pedestrianPath"],
                 distance: 2.5,
@@ -51,6 +45,12 @@ export const lot = {
             },
             {
                 end: "29",
+                tags: ["pedestrianPath", "carPath", "botPath"],
+                distance: 14,
+                angle: 0,
+            },
+            {
+                end: "2",
                 tags: ["pedestrianPath", "carPath", "botPath"],
             },
         ],
@@ -736,6 +736,8 @@ export const lot = {
             {
                 end: "3",
                 tags: ["pedestrianPath"],
+                distance: 14,
+                angle: 3.141592653589793,
             },
         ],
     },
@@ -1282,6 +1284,8 @@ export const lot = {
             {
                 end: "101",
                 tags: ["pedestrianPath"],
+                distance: 2.5,
+                angle: 1.5707963267948966,
             },
         ],
     },
@@ -1305,10 +1309,14 @@ export const lot = {
             {
                 end: "1",
                 tags: ["carPath", "pedestrianPath", "botPath"],
+                distance: 5,
+                angle: 3.141592653589793,
             },
             {
                 end: "101",
                 tags: ["carPath", "pedestrianPath", "botPath"],
+                distance: 2.5,
+                angle: -1.5707963267948966,
             },
         ],
     },
@@ -1921,6 +1929,8 @@ export const lot = {
             {
                 end: "101",
                 tags: ["carPath", "pedestrianPath", "botPath"],
+                distance: 4.5,
+                angle: 3.141592653589793,
             },
         ],
     },
@@ -2759,14 +2769,20 @@ export const lot = {
             {
                 end: "71",
                 tags: ["carPath", "pedestrianPath", "botPath"],
+                distance: 4.5,
+                angle: 0,
             },
             {
                 end: "49",
                 tags: ["carPath", "pedestrianPath", "botPath"],
+                distance: 2.5,
+                angle: -1.5707963267948966,
             },
             {
                 end: "51",
                 tags: ["pedestrianPath"],
+                distance: 2.5,
+                angle: 1.5707963267948966,
             },
         ],
     },
@@ -2778,6 +2794,8 @@ export const lot = {
             {
                 end: "3",
                 tags: ["carPath", "pedestrianPath", "botPath"],
+                distance: 2,
+                angle: 0,
             },
         ],
     },
